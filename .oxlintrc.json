@@ -1,0 +1,3 @@
+{
+  "extends": ["@jterrazz/codestyle/oxlint/node"]
+}

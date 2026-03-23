@@ -1,0 +1,35 @@
+{
+  "name": "@jterrazz/broadcast",
+  "version": "0.1.0",
+  "author": "Jean-Baptiste Terrazzoni <contact@jterrazz.com>",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "typescript build --lib",
+    "lint": "codestyle",
+    "lint:fix": "codestyle --fix",
+    "test": "vitest --run"
+  },
+  "dependencies": {
+    "jose": "^6.0.11"
+  },
+  "devDependencies": {
+    "@jterrazz/codestyle": "^1.2.6",
+    "@jterrazz/test": "^3.1.0",
+    "@jterrazz/typescript": "^4.3.1",
+    "@types/node": "^25.0.10",
+    "eslint": "^9.39.2",
+    "vitest": "^4.0.18"
+  }
+}

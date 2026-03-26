@@ -92,9 +92,20 @@ export class AppleAppStoreAdapter implements BroadcastProviderPort {
       localizationBody,
     );
 
-    // Step 3: Upload event card image if provided
-    if (broadcast.imageUrl) {
-      await this.uploadEventCardImage(token, localizationResponse.data.id, broadcast.imageUrl);
+    // Step 3: Upload images if provided
+    const localizationId = localizationResponse.data.id;
+
+    if (broadcast.cardImageUrl) {
+      await this.uploadEventImage(token, localizationId, broadcast.cardImageUrl, "EVENT_CARD");
+    }
+
+    if (broadcast.detailImageUrl) {
+      await this.uploadEventImage(
+        token,
+        localizationId,
+        broadcast.detailImageUrl,
+        "EVENT_DETAILS_PAGE",
+      );
     }
 
     return {
@@ -173,10 +184,11 @@ export class AppleAppStoreAdapter implements BroadcastProviderPort {
     };
   }
 
-  private async uploadEventCardImage(
+  private async uploadEventImage(
     token: string,
     localizationId: string,
     imageUrl: string,
+    assetType: "EVENT_CARD" | "EVENT_DETAILS_PAGE",
   ): Promise<void> {
     // Download the image
     const imageResponse = await fetch(imageUrl);
@@ -193,7 +205,7 @@ export class AppleAppStoreAdapter implements BroadcastProviderPort {
     const reserveBody = {
       data: {
         attributes: {
-          appEventAssetType: "EVENT_CARD",
+          appEventAssetType: assetType,
           fileName,
           fileSize: imageBuffer.byteLength,
         },

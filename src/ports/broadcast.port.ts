@@ -39,8 +39,11 @@ export interface Broadcast {
   /** Regional availability (ISO 3166-1 alpha-2 codes). Undefined = all regions. */
   territories?: string[];
 
-  /** URL to an image for the event card (will be downloaded and uploaded to providers) */
-  imageUrl?: string;
+  /** URL to an image for the event card — landscape 16:9 (e.g. 1920x1080) */
+  cardImageUrl?: string;
+
+  /** URL to an image for the event detail page — portrait 9:16 (e.g. 1080x1920) */
+  detailImageUrl?: string;
 }
 
 export type BroadcastBadge =

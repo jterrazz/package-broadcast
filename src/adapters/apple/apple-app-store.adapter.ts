@@ -51,12 +51,12 @@ export class AppleAppStoreAdapter implements BroadcastProviderPort {
             },
           },
         },
-        type: "inAppEvents",
+        type: "appEvents",
       },
     };
 
     const eventResponse = await this.request<AppleEventResponse>(
-      "/inAppEvents",
+      "/appEvents",
       "POST",
       token,
       eventBody,
@@ -74,18 +74,18 @@ export class AppleAppStoreAdapter implements BroadcastProviderPort {
           shortDescription: broadcast.shortDescription,
         },
         relationships: {
-          inAppEvent: {
+          appEvent: {
             data: {
               id: eventId,
-              type: "inAppEvents",
+              type: "appEvents",
             },
           },
         },
-        type: "inAppEventLocalizations",
+        type: "appEventLocalizations",
       },
     };
 
-    await this.request("/inAppEventLocalizations", "POST", token, localizationBody);
+    await this.request("/appEventLocalizations", "POST", token, localizationBody);
 
     return {
       id: eventId,
@@ -97,14 +97,14 @@ export class AppleAppStoreAdapter implements BroadcastProviderPort {
 
   async delete(id: string): Promise<void> {
     const token = await createAppleJwt(this.config);
-    await this.request(`/inAppEvents/${id}`, "DELETE", token);
+    await this.request(`/appEvents/${id}`, "DELETE", token);
   }
 
   async list(): Promise<BroadcastResult[]> {
     const token = await createAppleJwt(this.config);
 
     const response = await this.request<AppleListResponse>(
-      `/apps/${this.config.appId}/inAppEvents`,
+      `/apps/${this.config.appId}/appEvents`,
       "GET",
       token,
     );
@@ -144,12 +144,12 @@ export class AppleAppStoreAdapter implements BroadcastProviderPort {
       data: {
         attributes,
         id,
-        type: "inAppEvents",
+        type: "appEvents",
       },
     };
 
     const response = await this.request<AppleEventResponse>(
-      `/inAppEvents/${id}`,
+      `/appEvents/${id}`,
       "PATCH",
       token,
       body,
@@ -167,12 +167,14 @@ export class AppleAppStoreAdapter implements BroadcastProviderPort {
     // If no territories specified, use a single schedule for all
     const territories = broadcast.territories ?? ["USA"];
 
-    return territories.map((territory) => ({
-      eventEnd: broadcast.endDate.toISOString(),
-      eventStart: broadcast.startDate.toISOString(),
-      publishStart: broadcast.startDate.toISOString(),
-      territory,
-    }));
+    return [
+      {
+        eventEnd: broadcast.endDate.toISOString(),
+        eventStart: broadcast.startDate.toISOString(),
+        publishStart: broadcast.startDate.toISOString(),
+        territories,
+      },
+    ];
   }
 
   private async request<T>(
@@ -247,7 +249,7 @@ interface AppleTerritorySchedule {
   eventEnd: string;
   eventStart: string;
   publishStart: string;
-  territory: string;
+  territories: string[];
 }
 
 interface AppleEventResponse {

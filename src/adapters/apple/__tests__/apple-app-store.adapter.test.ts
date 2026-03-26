@@ -52,7 +52,7 @@ describe("AppleAppStoreAdapter", () => {
           data: {
             attributes: { badge: "SPECIAL_EVENT", eventState: "DRAFT" },
             id: "event-123",
-            type: "inAppEvents",
+            type: "appEvents",
           },
         }),
       );
@@ -63,7 +63,7 @@ describe("AppleAppStoreAdapter", () => {
           data: {
             attributes: { locale: "en-US", name: "Spring Event" },
             id: "loc-456",
-            type: "inAppEventLocalizations",
+            type: "appEventLocalizations",
           },
         }),
       );
@@ -78,11 +78,11 @@ describe("AppleAppStoreAdapter", () => {
       expect(fetchSpy).toHaveBeenCalledTimes(2);
 
       const [eventUrl, eventOptions] = fetchSpy.mock.calls[0];
-      expect(eventUrl).toBe(`${BASE_URL}/inAppEvents`);
+      expect(eventUrl).toBe(`${BASE_URL}/appEvents`);
       expect(eventOptions.method).toBe("POST");
 
       const eventBody = JSON.parse(eventOptions.body);
-      expect(eventBody.data.type).toBe("inAppEvents");
+      expect(eventBody.data.type).toBe("appEvents");
       expect(eventBody.data.attributes.referenceName).toBe("Spring Event");
       expect(eventBody.data.attributes.badge).toBe("SPECIAL_EVENT");
       expect(eventBody.data.attributes.priority).toBe("NORMAL");
@@ -94,17 +94,17 @@ describe("AppleAppStoreAdapter", () => {
 
       // Verify localization request
       const [locUrl, locOptions] = fetchSpy.mock.calls[1];
-      expect(locUrl).toBe(`${BASE_URL}/inAppEventLocalizations`);
+      expect(locUrl).toBe(`${BASE_URL}/appEventLocalizations`);
       expect(locOptions.method).toBe("POST");
 
       const locBody = JSON.parse(locOptions.body);
-      expect(locBody.data.type).toBe("inAppEventLocalizations");
+      expect(locBody.data.type).toBe("appEventLocalizations");
       expect(locBody.data.attributes.name).toBe("Spring Event");
       expect(locBody.data.attributes.shortDescription).toBe("Live event this weekend!");
       expect(locBody.data.attributes.longDescription).toBe(
         "Join us for a special live event with exclusive content and prizes.",
       );
-      expect(locBody.data.relationships.inAppEvent.data.id).toBe("event-123");
+      expect(locBody.data.relationships.appEvent.data.id).toBe("event-123");
     });
 
     it("should send authorization header with JWT", async () => {
@@ -113,7 +113,7 @@ describe("AppleAppStoreAdapter", () => {
           data: {
             attributes: { badge: "CHALLENGE", eventState: "DRAFT" },
             id: "e-1",
-            type: "inAppEvents",
+            type: "appEvents",
           },
         }),
       );
@@ -132,7 +132,7 @@ describe("AppleAppStoreAdapter", () => {
           data: {
             attributes: { badge: "LIVE_EVENT", eventState: "DRAFT" },
             id: "e-1",
-            type: "inAppEvents",
+            type: "appEvents",
           },
         }),
       );
@@ -161,7 +161,7 @@ describe("AppleAppStoreAdapter", () => {
             data: {
               attributes: { badge: expected, eventState: "DRAFT" },
               id: "e-1",
-              type: "inAppEvents",
+              type: "appEvents",
             },
           }),
         );
@@ -188,7 +188,7 @@ describe("AppleAppStoreAdapter", () => {
             data: {
               attributes: { badge: "SPECIAL_EVENT", eventState: "DRAFT" },
               id: "e-1",
-              type: "inAppEvents",
+              type: "appEvents",
             },
           }),
         );
@@ -207,7 +207,7 @@ describe("AppleAppStoreAdapter", () => {
           data: {
             attributes: { badge: "SPECIAL_EVENT", eventState: "DRAFT" },
             id: "e-1",
-            type: "inAppEvents",
+            type: "appEvents",
           },
         }),
       );
@@ -225,7 +225,7 @@ describe("AppleAppStoreAdapter", () => {
           data: {
             attributes: { badge: "SPECIAL_EVENT", eventState: "DRAFT" },
             id: "e-1",
-            type: "inAppEvents",
+            type: "appEvents",
           },
         }),
       );
@@ -240,9 +240,8 @@ describe("AppleAppStoreAdapter", () => {
       const eventBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
       const schedules = eventBody.data.attributes.territorySchedules;
 
-      expect(schedules).toHaveLength(2);
-      expect(schedules[0].territory).toBe("USA");
-      expect(schedules[1].territory).toBe("FRA");
+      expect(schedules).toHaveLength(1);
+      expect(schedules[0].territories).toEqual(["USA", "FRA"]);
       expect(schedules[0].eventStart).toBe("2026-04-01T00:00:00.000Z");
       expect(schedules[0].eventEnd).toBe("2026-04-15T00:00:00.000Z");
     });
@@ -253,7 +252,7 @@ describe("AppleAppStoreAdapter", () => {
           data: {
             attributes: { badge: "SPECIAL_EVENT", eventState: "DRAFT" },
             id: "e-1",
-            type: "inAppEvents",
+            type: "appEvents",
           },
         }),
       );
@@ -263,7 +262,7 @@ describe("AppleAppStoreAdapter", () => {
 
       const eventBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
       expect(eventBody.data.attributes.territorySchedules).toHaveLength(1);
-      expect(eventBody.data.attributes.territorySchedules[0].territory).toBe("USA");
+      expect(eventBody.data.attributes.territorySchedules[0].territories).toEqual(["USA"]);
     });
 
     it("should default deepLink to empty string when not provided", async () => {
@@ -272,7 +271,7 @@ describe("AppleAppStoreAdapter", () => {
           data: {
             attributes: { badge: "SPECIAL_EVENT", eventState: "DRAFT" },
             id: "e-1",
-            type: "inAppEvents",
+            type: "appEvents",
           },
         }),
       );
@@ -308,7 +307,7 @@ describe("AppleAppStoreAdapter", () => {
                 referenceName: "Spring Event",
               },
               id: "event-1",
-              type: "inAppEvents",
+              type: "appEvents",
             },
             {
               attributes: {
@@ -317,7 +316,7 @@ describe("AppleAppStoreAdapter", () => {
                 referenceName: "Weekly Challenge",
               },
               id: "event-2",
-              type: "inAppEvents",
+              type: "appEvents",
             },
             {
               attributes: {
@@ -326,7 +325,7 @@ describe("AppleAppStoreAdapter", () => {
                 referenceName: "Live Show",
               },
               id: "event-3",
-              type: "inAppEvents",
+              type: "appEvents",
             },
           ],
         }),
@@ -347,7 +346,7 @@ describe("AppleAppStoreAdapter", () => {
 
       // Verify URL includes the app ID
       const [url] = fetchSpy.mock.calls[0];
-      expect(url).toBe(`${BASE_URL}/apps/6444444444/inAppEvents`);
+      expect(url).toBe(`${BASE_URL}/apps/6444444444/appEvents`);
     });
 
     it("should map all Apple event states correctly", async () => {
@@ -373,7 +372,7 @@ describe("AppleAppStoreAdapter", () => {
                   referenceName: "Test",
                 },
                 id: "e-1",
-                type: "inAppEvents",
+                type: "appEvents",
               },
             ],
           }),
@@ -399,7 +398,7 @@ describe("AppleAppStoreAdapter", () => {
           data: {
             attributes: { badge: "SPECIAL_EVENT", eventState: "DRAFT" },
             id: "event-123",
-            type: "inAppEvents",
+            type: "appEvents",
           },
         }),
       );
@@ -413,12 +412,12 @@ describe("AppleAppStoreAdapter", () => {
       expect(result.provider).toBe("apple-app-store");
 
       const [url, options] = fetchSpy.mock.calls[0];
-      expect(url).toBe(`${BASE_URL}/inAppEvents/event-123`);
+      expect(url).toBe(`${BASE_URL}/appEvents/event-123`);
       expect(options.method).toBe("PATCH");
 
       const body = JSON.parse(options.body);
       expect(body.data.id).toBe("event-123");
-      expect(body.data.type).toBe("inAppEvents");
+      expect(body.data.type).toBe("appEvents");
       expect(body.data.attributes.deepLink).toBe("signews://events/updated");
       expect(body.data.attributes.priority).toBe("HIGH");
     });
@@ -429,7 +428,7 @@ describe("AppleAppStoreAdapter", () => {
           data: {
             attributes: { badge: "SPECIAL_EVENT", eventState: "DRAFT" },
             id: "event-123",
-            type: "inAppEvents",
+            type: "appEvents",
           },
         }),
       );
@@ -448,7 +447,7 @@ describe("AppleAppStoreAdapter", () => {
           data: {
             attributes: { badge: "SPECIAL_EVENT", eventState: "DRAFT" },
             id: "event-123",
-            type: "inAppEvents",
+            type: "appEvents",
           },
         }),
       );
@@ -467,7 +466,7 @@ describe("AppleAppStoreAdapter", () => {
       await adapter.delete("event-123");
 
       const [url, options] = fetchSpy.mock.calls[0];
-      expect(url).toBe(`${BASE_URL}/inAppEvents/event-123`);
+      expect(url).toBe(`${BASE_URL}/appEvents/event-123`);
       expect(options.method).toBe("DELETE");
     });
 

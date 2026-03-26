@@ -1,4 +1,6 @@
 node_modules/
 .idea
 .DS_Store
-dist
+disttest-local.mjs
+test-real.mjs
+test-auth.mjs

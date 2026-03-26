@@ -40,19 +40,19 @@ await sendBroadcast(
 
 ## Broadcast Model
 
-| Field              | Type              | Description                                        |
-| ------------------ | ----------------- | -------------------------------------------------- |
-| `title`            | `string`          | Display title (max ~30 chars for App Store compat)  |
-| `shortDescription` | `string`          | Teaser for cards/previews (max ~50 chars)           |
-| `longDescription`  | `string`          | Detail view description (max ~120 chars)            |
-| `startDate`        | `Date`            | When the event starts                               |
-| `endDate`          | `Date`            | When the event ends                                 |
-| `badge`            | `BroadcastBadge`  | Event category                                      |
-| `audience`         | `BroadcastAudience` | Target audience                                   |
-| `priority`         | `"normal" \| "high"` | Visibility level                                |
-| `deepLink`         | `string?`         | Deep link URL into the app                          |
-| `requiresPurchase` | `boolean?`        | Whether participation requires a purchase           |
-| `territories`      | `string[]?`       | ISO 3166-1 alpha-2 country codes (default: all)     |
+| Field              | Type                 | Description                                        |
+| ------------------ | -------------------- | -------------------------------------------------- |
+| `title`            | `string`             | Display title (max ~30 chars for App Store compat) |
+| `shortDescription` | `string`             | Teaser for cards/previews (max ~50 chars)          |
+| `longDescription`  | `string`             | Detail view description (max ~120 chars)           |
+| `startDate`        | `Date`               | When the event starts                              |
+| `endDate`          | `Date`               | When the event ends                                |
+| `badge`            | `BroadcastBadge`     | Event category                                     |
+| `audience`         | `BroadcastAudience`  | Target audience                                    |
+| `priority`         | `"normal" \| "high"` | Visibility level                                   |
+| `deepLink`         | `string?`            | Deep link URL into the app                         |
+| `requiresPurchase` | `boolean?`           | Whether participation requires a purchase          |
+| `territories`      | `string[]?`          | ISO 3166-1 alpha-2 country codes (default: all)    |
 
 ### Badge Types
 
@@ -72,7 +72,7 @@ Creates [In-App Events](https://developer.apple.com/app-store/in-app-events/) on
 
 1. Go to [App Store Connect](https://appstoreconnect.apple.com) → **Users and Access** → **Integrations** → **App Store Connect API**
 2. Click **Generate API Key**
-   - Name: e.g. `broadcast-bot`
+   - Name: e.g. `signews-broadcast`
    - Access: **Admin** (required for In-App Events)
 3. **Download the `.p8` file** — you can only download it once
 4. Note the **Key ID** shown in the table (e.g. `2X9R4HXF34`)
@@ -118,17 +118,17 @@ await apple.delete("event-id");
 
 #### Field Mapping
 
-| Broadcast           | Apple In-App Event          |
-| ------------------- | --------------------------- |
-| `title`             | `referenceName` + localized `name` |
-| `shortDescription`  | Localized `shortDescription` |
-| `longDescription`   | Localized `longDescription`  |
-| `badge`             | `badge` (CHALLENGE, COMPETITION, etc.) |
-| `audience`          | `purpose` (APPROPRIATE_FOR_ALL_USERS, ATTRACT_NEW_USERS, ATTRACT_LAPSED_USERS) |
-| `priority`          | `priority` (NORMAL, HIGH)    |
-| `requiresPurchase`  | `purchaseRequirement` (NO_COST_ASSOCIATED, IN_APP_PURCHASE) |
-| `territories`       | `territorySchedules`         |
-| `deepLink`          | `deepLink`                   |
+| Broadcast          | Apple In-App Event                                                             |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `title`            | `referenceName` + localized `name`                                             |
+| `shortDescription` | Localized `shortDescription`                                                   |
+| `longDescription`  | Localized `longDescription`                                                    |
+| `badge`            | `badge` (CHALLENGE, COMPETITION, etc.)                                         |
+| `audience`         | `purpose` (APPROPRIATE_FOR_ALL_USERS, ATTRACT_NEW_USERS, ATTRACT_LAPSED_USERS) |
+| `priority`         | `priority` (NORMAL, HIGH)                                                      |
+| `requiresPurchase` | `purchaseRequirement` (NO_COST_ASSOCIATED, IN_APP_PURCHASE)                    |
+| `territories`      | `territorySchedules`                                                           |
+| `deepLink`         | `deepLink`                                                                     |
 
 #### Limits
 
@@ -174,9 +174,15 @@ class SlackProvider implements BroadcastProviderPort {
     // Post to Slack webhook
   }
 
-  async update(id, broadcast) { /* ... */ }
-  async delete(id) { /* ... */ }
-  async list() { /* ... */ }
+  async update(id, broadcast) {
+    /* ... */
+  }
+  async delete(id) {
+    /* ... */
+  }
+  async list() {
+    /* ... */
+  }
 }
 ```
 

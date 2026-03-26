@@ -85,7 +85,17 @@ export class AppleAppStoreAdapter implements BroadcastProviderPort {
       },
     };
 
-    await this.request("/appEventLocalizations", "POST", token, localizationBody);
+    const localizationResponse = await this.request<AppleLocalizationResponse>(
+      "/appEventLocalizations",
+      "POST",
+      token,
+      localizationBody,
+    );
+
+    // Step 3: Upload event card image if provided
+    if (broadcast.imageUrl) {
+      await this.uploadEventCardImage(token, localizationResponse.data.id, broadcast.imageUrl);
+    }
 
     return {
       id: eventId,
@@ -161,6 +171,86 @@ export class AppleAppStoreAdapter implements BroadcastProviderPort {
       raw: response,
       status: mapAppleStatus(response.data.attributes.eventState),
     };
+  }
+
+  private async uploadEventCardImage(
+    token: string,
+    localizationId: string,
+    imageUrl: string,
+  ): Promise<void> {
+    // Download the image
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to download image from ${imageUrl}: ${imageResponse.status}`);
+    }
+
+    const imageBuffer = new Uint8Array(await imageResponse.arrayBuffer());
+    const contentType = imageResponse.headers.get("content-type") ?? "image/png";
+    const extension = contentType.includes("jpeg") || contentType.includes("jpg") ? "jpg" : "png";
+    const fileName = `event-card.${extension}`;
+
+    // Step 1: Reserve the screenshot slot
+    const reserveBody = {
+      data: {
+        attributes: {
+          appEventAssetType: "EVENT_CARD",
+          fileName,
+          fileSize: imageBuffer.byteLength,
+        },
+        relationships: {
+          appEventLocalization: {
+            data: {
+              id: localizationId,
+              type: "appEventLocalizations",
+            },
+          },
+        },
+        type: "appEventScreenshots",
+      },
+    };
+
+    const reserveResponse = await this.request<AppleScreenshotResponse>(
+      "/appEventScreenshots",
+      "POST",
+      token,
+      reserveBody,
+    );
+
+    const screenshotId = reserveResponse.data.id;
+    const uploadOperations = reserveResponse.data.attributes.uploadOperations ?? [];
+
+    // Step 2: Upload image chunks
+    for (const operation of uploadOperations) {
+      const chunk = imageBuffer.slice(operation.offset, operation.offset + operation.length);
+
+      const headers: Record<string, string> = {};
+      for (const header of operation.requestHeaders ?? []) {
+        headers[header.name] = header.value;
+      }
+
+      const uploadResponse = await fetch(operation.url, {
+        body: chunk,
+        headers,
+        method: operation.method,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(
+          `Failed to upload image chunk: ${uploadResponse.status} ${uploadResponse.statusText}`,
+        );
+      }
+    }
+
+    // Step 3: Commit the upload
+    await this.request(`/appEventScreenshots/${screenshotId}`, "PATCH", token, {
+      data: {
+        attributes: {
+          uploaded: true,
+        },
+        id: screenshotId,
+        type: "appEventScreenshots",
+      },
+    });
   }
 
   private buildTerritorySchedules(broadcast: Broadcast): AppleTerritorySchedule[] {
@@ -250,6 +340,29 @@ interface AppleTerritorySchedule {
   eventStart: string;
   publishStart: string;
   territories: string[];
+}
+
+interface AppleLocalizationResponse {
+  data: {
+    id: string;
+    type: string;
+  };
+}
+
+interface AppleScreenshotResponse {
+  data: {
+    attributes: {
+      uploadOperations?: Array<{
+        length: number;
+        method: string;
+        offset: number;
+        requestHeaders?: Array<{ name: string; value: string }>;
+        url: string;
+      }>;
+    };
+    id: string;
+    type: string;
+  };
 }
 
 interface AppleEventResponse {

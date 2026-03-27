@@ -4,3 +4,6 @@ node_modules/
 disttest-local.mjs
 test-real.mjs
 test-auth.mjs
+
+dist
+test-local.mjs

@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import type { Broadcast } from "../../../ports/broadcast.port.js";
-import { AppleAppStoreAdapter, AppleAppStoreError } from "../apple-app-store.adapter.js";
+import type { Broadcast } from "../../ports/broadcast.port.js";
+import { AppleAppStoreAdapter, AppleAppStoreError } from "./apple-app-store.adapter.js";
 
 // Mock the JWT generation to avoid needing a real private key
-vi.mock("../apple-auth.js", () => ({
+vi.mock("./apple-auth.js", () => ({
   createAppleJwt: vi.fn().mockResolvedValue("mock-jwt-token"),
 }));
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { createAppleJwt } from "../apple-auth.js";
+import { createAppleJwt } from "./apple-auth.js";
 
 // Test ES256 private key (NOT a real key — generated for tests only)
 const TEST_PRIVATE_KEY = `-----BEGIN PRIVATE KEY-----

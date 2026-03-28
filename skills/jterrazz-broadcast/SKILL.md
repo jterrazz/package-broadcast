@@ -1,9 +1,11 @@
 ---
 name: jterrazz-broadcast
-description: Multi-channel announcement system using @jterrazz/broadcast. Activates when creating, sending, or managing announcements across Apple App Store In-App Events, push notifications, or other distribution channels.
+description: Multi-channel announcements for the @jterrazz ecosystem — defines how apps distribute events. Activates when creating or managing App Store In-App Events, push notifications, or other channels.
 ---
 
 # @jterrazz/broadcast
+
+Part of the @jterrazz ecosystem. Defines how apps announce and distribute events.
 
 Define an announcement once, send it to multiple channels — App Store, push, email, in-app.
 

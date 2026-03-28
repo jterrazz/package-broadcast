@@ -1,6 +1,6 @@
 import { importPKCS8, SignJWT } from "jose";
 
-export interface AppleAuthConfig {
+interface AppleAuthConfig {
   /** Issuer ID from App Store Connect (e.g. "57246542-96fe-1a63-e053-0824d011072a") */
   issuerId: string;
 
@@ -21,7 +21,7 @@ const ALGORITHM = "ES256";
  *
  * @see https://developer.apple.com/documentation/appstoreconnectapi/generating_tokens_for_api_requests
  */
-export async function createAppleJwt(config: AppleAuthConfig): Promise<string> {
+async function createAppleJwt(config: AppleAuthConfig): Promise<string> {
   const privateKey = await importPKCS8(config.privateKey, ALGORITHM);
 
   const now = Math.floor(Date.now() / 1000);
@@ -34,3 +34,5 @@ export async function createAppleJwt(config: AppleAuthConfig): Promise<string> {
     .setAudience(AUDIENCE)
     .sign(privateKey);
 }
+
+export { type AppleAuthConfig, createAppleJwt };

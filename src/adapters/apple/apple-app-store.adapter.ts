@@ -7,7 +7,7 @@ import type {
 } from "../../ports/broadcast.port.js";
 import { type AppleAuthConfig, createAppleJwt } from "./apple-auth.js";
 
-export interface AppleAppStoreConfig extends AppleAuthConfig {
+interface AppleAppStoreConfig extends AppleAuthConfig {
   /** The App Store Connect app ID (e.g. "6444444444") */
   appId: string;
 }
@@ -19,10 +19,13 @@ const BASE_URL = "https://api.appstoreconnect.apple.com/v1";
  *
  * @see https://developer.apple.com/app-store/in-app-events/
  */
-export class AppleAppStoreAdapter implements BroadcastProviderPort {
+class AppleAppStoreAdapter implements BroadcastProviderPort {
   readonly name = "apple-app-store";
+  private readonly config: AppleAppStoreConfig;
 
-  constructor(private readonly config: AppleAppStoreConfig) {}
+  constructor(config: AppleAppStoreConfig) {
+    this.config = config;
+  }
 
   async create(broadcast: Broadcast): Promise<BroadcastResult> {
     const token = await createAppleJwt(this.config);
@@ -310,14 +313,15 @@ export class AppleAppStoreAdapter implements BroadcastProviderPort {
   }
 }
 
-export class AppleAppStoreError extends Error {
-  constructor(
-    message: string,
-    public readonly statusCode: number,
-    public readonly responseBody: string,
-  ) {
+class AppleAppStoreError extends Error {
+  readonly statusCode: number;
+  readonly responseBody: string;
+
+  constructor(message: string, statusCode: number, responseBody: string) {
     super(message);
     this.name = "AppleAppStoreError";
+    this.statusCode = statusCode;
+    this.responseBody = responseBody;
   }
 }
 
@@ -411,3 +415,5 @@ function mapAppleStatus(eventState: string): BroadcastResult["status"] {
   };
   return map[eventState] ?? "created";
 }
+
+export { AppleAppStoreAdapter, type AppleAppStoreConfig, AppleAppStoreError };

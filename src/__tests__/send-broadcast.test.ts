@@ -76,4 +76,55 @@ describe("sendBroadcast", () => {
     expect(results[1].status).toBe("failed");
     expect(results[1].provider).toBe("broken");
   });
+
+  test("should return empty array for empty providers", async () => {
+    // Given — no providers
+    const broadcast = makeBroadcast();
+
+    // Then — empty results
+    const results = await sendBroadcast(broadcast, []);
+
+    expect(results).toHaveLength(0);
+  });
+
+  test("should handle all providers failing", async () => {
+    // Given — two failing providers
+    const fail1: BroadcastProviderPort = {
+      create: vi.fn().mockRejectedValue(new Error("Error 1")),
+      delete: vi.fn(),
+      list: vi.fn(),
+      name: "fail-1",
+      update: vi.fn(),
+    };
+    const fail2: BroadcastProviderPort = {
+      create: vi.fn().mockRejectedValue(new Error("Error 2")),
+      delete: vi.fn(),
+      list: vi.fn(),
+      name: "fail-2",
+      update: vi.fn(),
+    };
+
+    // Then — all results are failed
+    const results = await sendBroadcast(makeBroadcast(), [fail1, fail2]);
+
+    expect(results).toHaveLength(2);
+    expect(results.every((r) => r.status === "failed")).toBe(true);
+  });
+
+  test("should include error in raw field on failure", async () => {
+    // Given — a provider that throws with a message
+    const failProvider: BroadcastProviderPort = {
+      create: vi.fn().mockRejectedValue(new Error("Network timeout")),
+      delete: vi.fn(),
+      list: vi.fn(),
+      name: "broken",
+      update: vi.fn(),
+    };
+
+    // Then — raw field contains the error
+    const results = await sendBroadcast(makeBroadcast(), [failProvider]);
+
+    expect(results[0].raw).toBeInstanceOf(Error);
+    expect((results[0].raw as Error).message).toBe("Network timeout");
+  });
 });

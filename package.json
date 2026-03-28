@@ -31,7 +31,7 @@
   "devDependencies": {
     "@jterrazz/codestyle": "^2.1.0",
     "@jterrazz/test": "^3.1.0",
-    "@jterrazz/typescript": "^5.1.0",
+    "@jterrazz/typescript": "^5.2.0",
     "@types/node": "^25.5.0",
     "eslint": "^10.1.0",
     "vitest": "^4.1.2"

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { Broadcast } from "../../../ports/broadcast.port.js";
 import { AppleAppStoreAdapter, AppleAppStoreError } from "../apple-app-store.adapter.js";
@@ -45,7 +45,8 @@ describe("AppleAppStoreAdapter", () => {
   });
 
   describe("create", () => {
-    it("should create an event and its localization", async () => {
+    test("should create an event and its localization", async () => {
+      // Given — mock responses for event creation and localization
       // First call: create event
       fetchSpy.mockResolvedValueOnce(
         mockResponse(201, {
@@ -68,6 +69,7 @@ describe("AppleAppStoreAdapter", () => {
         }),
       );
 
+      // Then — the event and localization are created with correct data
       const result = await adapter.create(makeBroadcast());
 
       expect(result.id).toBe("event-123");
@@ -107,7 +109,8 @@ describe("AppleAppStoreAdapter", () => {
       expect(locBody.data.relationships.appEvent.data.id).toBe("event-123");
     });
 
-    it("should send authorization header with JWT", async () => {
+    test("should send authorization header with JWT", async () => {
+      // Given — mock responses for a successful creation
       fetchSpy.mockResolvedValueOnce(
         mockResponse(201, {
           data: {
@@ -119,6 +122,7 @@ describe("AppleAppStoreAdapter", () => {
       );
       fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: "l-1" } }));
 
+      // Then — the authorization header contains the JWT token
       await adapter.create(makeBroadcast());
 
       const [, options] = fetchSpy.mock.calls[0];
@@ -126,7 +130,8 @@ describe("AppleAppStoreAdapter", () => {
       expect(options.headers["Content-Type"]).toBe("application/json");
     });
 
-    it("should map high priority correctly", async () => {
+    test("should map high priority correctly", async () => {
+      // Given — a broadcast with high priority
       fetchSpy.mockResolvedValueOnce(
         mockResponse(201, {
           data: {
@@ -138,13 +143,15 @@ describe("AppleAppStoreAdapter", () => {
       );
       fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: "l-1" } }));
 
+      // Then — the priority is mapped to "HIGH"
       await adapter.create(makeBroadcast({ priority: "high" }));
 
       const eventBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
       expect(eventBody.data.attributes.priority).toBe("HIGH");
     });
 
-    it("should map all badge types correctly", async () => {
+    test("should map all badge types correctly", async () => {
+      // Given — all possible badge type inputs
       const badges = [
         ["challenge", "CHALLENGE"],
         ["competition", "COMPETITION"],
@@ -167,6 +174,7 @@ describe("AppleAppStoreAdapter", () => {
         );
         fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: "l-1" } }));
 
+        // Then — each badge is mapped to the correct Apple format
         await adapter.create(makeBroadcast({ badge: input }));
 
         const eventBody = JSON.parse(fetchSpy.mock.calls.at(-2)![1].body);
@@ -174,7 +182,8 @@ describe("AppleAppStoreAdapter", () => {
       }
     });
 
-    it("should map audience types correctly", async () => {
+    test("should map audience types correctly", async () => {
+      // Given — all possible audience type inputs
       const audiences = [
         ["all", "APPROPRIATE_FOR_ALL_USERS"],
         ["active-users", "APPROPRIATE_FOR_ALL_USERS"],
@@ -194,6 +203,7 @@ describe("AppleAppStoreAdapter", () => {
         );
         fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: "l-1" } }));
 
+        // Then — each audience is mapped to the correct Apple purpose
         await adapter.create(makeBroadcast({ audience: input }));
 
         const eventBody = JSON.parse(fetchSpy.mock.calls.at(-2)![1].body);
@@ -201,7 +211,8 @@ describe("AppleAppStoreAdapter", () => {
       }
     });
 
-    it("should map requiresPurchase to IN_APP_PURCHASE", async () => {
+    test("should map requiresPurchase to IN_APP_PURCHASE", async () => {
+      // Given — a broadcast that requires purchase
       fetchSpy.mockResolvedValueOnce(
         mockResponse(201, {
           data: {
@@ -213,13 +224,15 @@ describe("AppleAppStoreAdapter", () => {
       );
       fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: "l-1" } }));
 
+      // Then — the purchase requirement is set to IN_APP_PURCHASE
       await adapter.create(makeBroadcast({ requiresPurchase: true }));
 
       const eventBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
       expect(eventBody.data.attributes.purchaseRequirement).toBe("IN_APP_PURCHASE");
     });
 
-    it("should build territory schedules with dates", async () => {
+    test("should build territory schedules with dates", async () => {
+      // Given — a broadcast with specific territories
       fetchSpy.mockResolvedValueOnce(
         mockResponse(201, {
           data: {
@@ -231,6 +244,7 @@ describe("AppleAppStoreAdapter", () => {
       );
       fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: "l-1" } }));
 
+      // Then — the territory schedules include the specified territories and dates
       await adapter.create(
         makeBroadcast({
           territories: ["USA", "FRA"],
@@ -246,7 +260,8 @@ describe("AppleAppStoreAdapter", () => {
       expect(schedules[0].eventEnd).toBe("2026-04-15T00:00:00.000Z");
     });
 
-    it("should default to USA when no territories specified", async () => {
+    test("should default to USA when no territories specified", async () => {
+      // Given — a broadcast without territories
       fetchSpy.mockResolvedValueOnce(
         mockResponse(201, {
           data: {
@@ -258,6 +273,7 @@ describe("AppleAppStoreAdapter", () => {
       );
       fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: "l-1" } }));
 
+      // Then — the default territory is USA
       await adapter.create(makeBroadcast({ territories: undefined }));
 
       const eventBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
@@ -265,7 +281,8 @@ describe("AppleAppStoreAdapter", () => {
       expect(eventBody.data.attributes.territorySchedules[0].territories).toEqual(["USA"]);
     });
 
-    it("should default deepLink to empty string when not provided", async () => {
+    test("should default deepLink to empty string when not provided", async () => {
+      // Given — a broadcast without a deepLink
       fetchSpy.mockResolvedValueOnce(
         mockResponse(201, {
           data: {
@@ -277,26 +294,30 @@ describe("AppleAppStoreAdapter", () => {
       );
       fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: "l-1" } }));
 
+      // Then — the deepLink defaults to an empty string
       await adapter.create(makeBroadcast({ deepLink: undefined }));
 
       const eventBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
       expect(eventBody.data.attributes.deepLink).toBe("");
     });
 
-    it("should throw AppleAppStoreError on API failure", async () => {
+    test("should throw AppleAppStoreError on API failure", async () => {
+      // Given — an API that returns 403
       fetchSpy.mockResolvedValueOnce(
         mockResponse(403, null, false, '{"errors":[{"detail":"Forbidden"}]}'),
       );
 
-      const error = await adapter.create(makeBroadcast()).catch((e: unknown) => e);
+      // Then — an AppleAppStoreError is thrown with the correct status code
+      const caughtError = await adapter.create(makeBroadcast()).catch((error: unknown) => error);
 
-      expect(error).toBeInstanceOf(AppleAppStoreError);
-      expect((error as AppleAppStoreError).statusCode).toBe(403);
+      expect(caughtError).toBeInstanceOf(AppleAppStoreError);
+      expect((caughtError as AppleAppStoreError).statusCode).toBe(403);
     });
   });
 
   describe("list", () => {
-    it("should list events for the app", async () => {
+    test("should list events for the app", async () => {
+      // Given — an API that returns three events with different states
       fetchSpy.mockResolvedValueOnce(
         mockResponse(200, {
           data: [
@@ -331,6 +352,7 @@ describe("AppleAppStoreAdapter", () => {
         }),
       );
 
+      // Then — the events are returned with correctly mapped statuses
       const results = await adapter.list();
 
       expect(results).toHaveLength(3);
@@ -349,7 +371,8 @@ describe("AppleAppStoreAdapter", () => {
       expect(url).toBe(`${BASE_URL}/apps/6444444444/appEvents`);
     });
 
-    it("should map all Apple event states correctly", async () => {
+    test("should map all Apple event states correctly", async () => {
+      // Given — all possible Apple event states
       const states = [
         ["DRAFT", "created"],
         ["WAITING_FOR_REVIEW", "submitted"],
@@ -358,7 +381,7 @@ describe("AppleAppStoreAdapter", () => {
         ["PUBLISHED", "published"],
         ["PAST", "published"],
         ["REJECTED", "rejected"],
-        ["UNKNOWN_STATE", "created"], // fallback
+        ["UNKNOWN_STATE", "created"], // Fallback
       ] as const;
 
       for (const [appleState, expectedStatus] of states) {
@@ -378,21 +401,25 @@ describe("AppleAppStoreAdapter", () => {
           }),
         );
 
+        // Then — each state is mapped to the expected status
         const results = await adapter.list();
         expect(results[0].status).toBe(expectedStatus);
       }
     });
 
-    it("should return empty array when no events exist", async () => {
+    test("should return empty array when no events exist", async () => {
+      // Given — an API that returns no events
       fetchSpy.mockResolvedValueOnce(mockResponse(200, { data: [] }));
 
+      // Then — an empty array is returned
       const results = await adapter.list();
       expect(results).toHaveLength(0);
     });
   });
 
   describe("update", () => {
-    it("should send a PATCH request with partial attributes", async () => {
+    test("should send a PATCH request with partial attributes", async () => {
+      // Given — a mock response for a successful update
       fetchSpy.mockResolvedValueOnce(
         mockResponse(200, {
           data: {
@@ -403,6 +430,7 @@ describe("AppleAppStoreAdapter", () => {
         }),
       );
 
+      // Then — a PATCH request is sent with the correct attributes
       const result = await adapter.update("event-123", {
         deepLink: "signews://events/updated",
         priority: "high",
@@ -422,7 +450,8 @@ describe("AppleAppStoreAdapter", () => {
       expect(body.data.attributes.priority).toBe("HIGH");
     });
 
-    it("should only include provided fields in the update", async () => {
+    test("should only include provided fields in the update", async () => {
+      // Given — a mock response for a successful update
       fetchSpy.mockResolvedValueOnce(
         mockResponse(200, {
           data: {
@@ -433,6 +462,7 @@ describe("AppleAppStoreAdapter", () => {
         }),
       );
 
+      // Then — only the provided field is included in the request body
       await adapter.update("event-123", { audience: "lapsed-users" });
 
       const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
@@ -441,7 +471,8 @@ describe("AppleAppStoreAdapter", () => {
       });
     });
 
-    it("should map requiresPurchase in updates", async () => {
+    test("should map requiresPurchase in updates", async () => {
+      // Given — an update with requiresPurchase set to true
       fetchSpy.mockResolvedValueOnce(
         mockResponse(200, {
           data: {
@@ -452,6 +483,7 @@ describe("AppleAppStoreAdapter", () => {
         }),
       );
 
+      // Then — the purchase requirement is mapped correctly
       await adapter.update("event-123", { requiresPurchase: true });
 
       const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
@@ -460,9 +492,11 @@ describe("AppleAppStoreAdapter", () => {
   });
 
   describe("delete", () => {
-    it("should send a DELETE request", async () => {
+    test("should send a DELETE request", async () => {
+      // Given — a mock response for a successful deletion
       fetchSpy.mockResolvedValueOnce(mockResponse(204, null, true));
 
+      // Then — a DELETE request is sent to the correct URL
       await adapter.delete("event-123");
 
       const [url, options] = fetchSpy.mock.calls[0];
@@ -470,20 +504,24 @@ describe("AppleAppStoreAdapter", () => {
       expect(options.method).toBe("DELETE");
     });
 
-    it("should throw on API failure", async () => {
+    test("should throw on API failure", async () => {
+      // Given — an API that returns 404
       fetchSpy.mockResolvedValueOnce(
         mockResponse(404, null, false, '{"errors":[{"detail":"Not found"}]}'),
       );
 
+      // Then — an AppleAppStoreError is thrown
       await expect(adapter.delete("nonexistent")).rejects.toThrow(AppleAppStoreError);
     });
   });
 
   describe("error handling", () => {
-    it("should include status code and response body in error", async () => {
+    test("should include status code and response body in error", async () => {
+      // Given — an API that returns 422 with error details
       const errorResponse = '{"errors":[{"detail":"Invalid request","code":"INVALID"}]}';
       fetchSpy.mockResolvedValueOnce(mockResponse(422, null, false, errorResponse));
 
+      // Then — the error contains the status code and response body
       try {
         await adapter.create(makeBroadcast());
         expect.unreachable("Should have thrown");

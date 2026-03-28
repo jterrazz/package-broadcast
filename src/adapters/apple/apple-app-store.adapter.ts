@@ -5,7 +5,6 @@ import type {
   BroadcastProviderPort,
   BroadcastResult,
 } from "../../ports/broadcast.port.js";
-
 import { type AppleAuthConfig, createAppleJwt } from "./apple-auth.js";
 
 export interface AppleAppStoreConfig extends AppleAuthConfig {

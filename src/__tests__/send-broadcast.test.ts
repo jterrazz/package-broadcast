@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import type { Broadcast, BroadcastProviderPort, BroadcastResult } from "../ports/broadcast.port.js";
 import { sendBroadcast } from "../send-broadcast.js";
@@ -29,10 +29,12 @@ const makeProvider = (name: string, result?: Partial<BroadcastResult>): Broadcas
 });
 
 describe("sendBroadcast", () => {
-  it("should send to a single provider", async () => {
+  test("should send to a single provider", async () => {
+    // Given — a single provider and a broadcast
     const provider = makeProvider("test-provider");
     const broadcast = makeBroadcast();
 
+    // Then — the broadcast is sent and result matches the provider
     const results = await sendBroadcast(broadcast, [provider]);
 
     expect(results).toHaveLength(1);
@@ -41,11 +43,13 @@ describe("sendBroadcast", () => {
     expect(provider.create).toHaveBeenCalledWith(broadcast);
   });
 
-  it("should send to multiple providers concurrently", async () => {
+  test("should send to multiple providers concurrently", async () => {
+    // Given — two providers with different names
     const provider1 = makeProvider("apple", { id: "apple-1" });
     const provider2 = makeProvider("google", { id: "google-1" });
     const broadcast = makeBroadcast();
 
+    // Then — both providers receive the broadcast
     const results = await sendBroadcast(broadcast, [provider1, provider2]);
 
     expect(results).toHaveLength(2);
@@ -53,7 +57,8 @@ describe("sendBroadcast", () => {
     expect(results[1].provider).toBe("google");
   });
 
-  it("should handle provider failures gracefully", async () => {
+  test("should handle provider failures gracefully", async () => {
+    // Given — one working provider and one that rejects
     const successProvider = makeProvider("apple");
     const failProvider: BroadcastProviderPort = {
       create: vi.fn().mockRejectedValue(new Error("API down")),
@@ -63,6 +68,7 @@ describe("sendBroadcast", () => {
       update: vi.fn(),
     };
 
+    // Then — the failed provider returns a "failed" status
     const results = await sendBroadcast(makeBroadcast(), [successProvider, failProvider]);
 
     expect(results).toHaveLength(2);

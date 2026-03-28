@@ -14,20 +14,23 @@ Define an announcement once, send it to multiple channels — App Store, push, e
 ```typescript
 import { sendBroadcast, AppleAppStoreAdapter } from "@jterrazz/broadcast";
 
-await sendBroadcast({
-  title: "Breaking News",              // max 30 chars
-  shortDescription: "Live coverage",   // max 50 chars
-  longDescription: "Full details...",  // max 120 chars
-  badge: "live-event",                 // challenge | competition | live-event | major-update | new-season | premiere | special-event
-  audience: "all",                     // all | new-users | active-users | lapsed-users
-  priority: "high",                    // normal | high
-  startDate: new Date("2026-04-01"),
-  endDate: new Date("2026-04-07"),
-  deepLink: "myapp://events/123",
-  cardImageUrl: "https://...",         // 16:9 landscape
-  detailImageUrl: "https://...",       // 9:16 portrait
-  territories: ["USA", "FRA"],
-}, [apple]);
+await sendBroadcast(
+  {
+    title: "Breaking News", // max 30 chars
+    shortDescription: "Live coverage", // max 50 chars
+    longDescription: "Full details...", // max 120 chars
+    badge: "live-event", // challenge | competition | live-event | major-update | new-season | premiere | special-event
+    audience: "all", // all | new-users | active-users | lapsed-users
+    priority: "high", // normal | high
+    startDate: new Date("2026-04-01"),
+    endDate: new Date("2026-04-07"),
+    deepLink: "myapp://events/123",
+    cardImageUrl: "https://...", // 16:9 landscape
+    detailImageUrl: "https://...", // 9:16 portrait
+    territories: ["USA", "FRA"],
+  },
+  [apple],
+);
 ```
 
 ## Apple provider setup
@@ -47,8 +50,8 @@ const apple = new AppleAppStoreAdapter({
 ## Provider methods
 
 ```typescript
-await apple.create(broadcast);                     // Create event + localization + images
-await apple.list();                                // List existing events
+await apple.create(broadcast); // Create event + localization + images
+await apple.list(); // List existing events
 await apple.update("event-id", { priority: "normal" });
 await apple.delete("event-id");
 ```

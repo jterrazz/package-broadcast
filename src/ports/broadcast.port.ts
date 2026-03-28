@@ -28,7 +28,7 @@ export interface Broadcast {
   audience: BroadcastAudience;
 
   /** Normal or high visibility */
-  priority: "normal" | "high";
+  priority: "high" | "normal";
 
   /** Deep link URL into the app/site */
   deepLink?: string;
@@ -55,7 +55,7 @@ export type BroadcastBadge =
   | "premiere"
   | "special-event";
 
-export type BroadcastAudience = "all" | "new-users" | "active-users" | "lapsed-users";
+export type BroadcastAudience = "active-users" | "all" | "lapsed-users" | "new-users";
 
 /**
  * Result of sending a broadcast to a provider.
@@ -68,7 +68,7 @@ export interface BroadcastResult {
   provider: string;
 
   /** Current status */
-  status: "created" | "submitted" | "approved" | "published" | "rejected" | "failed";
+  status: "approved" | "created" | "failed" | "published" | "rejected" | "submitted";
 
   /** Raw response from the provider (for debugging) */
   raw?: unknown;

@@ -16,4 +16,4 @@ export {
   type AppleAppStoreConfig,
   AppleAppStoreError,
 } from "./adapters/apple/apple-app-store.adapter.js";
-export { createAppleJwt, type AppleAuthConfig } from "./adapters/apple/apple-auth.js";
+export { type AppleAuthConfig, createAppleJwt } from "./adapters/apple/apple-auth.js";

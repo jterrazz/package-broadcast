@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from "vitest";
 
 import { createAppleJwt } from "../apple-auth.js";
 
@@ -10,13 +10,15 @@ OF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r
 -----END PRIVATE KEY-----`;
 
 describe("createAppleJwt", () => {
-  it("should generate a valid JWT", async () => {
+  test("should generate a valid JWT", async () => {
+    // Given — valid Apple credentials
     const token = await createAppleJwt({
       issuerId: "test-issuer-id",
       keyId: "TEST_KEY_1",
       privateKey: TEST_PRIVATE_KEY,
     });
 
+    // Then — the token is a valid JWT with correct header and payload
     expect(token).toBeDefined();
     expect(typeof token).toBe("string");
 

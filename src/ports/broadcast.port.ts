@@ -3,93 +3,93 @@
  * that can be distributed to multiple channels.
  */
 export interface Broadcast {
-  /** Unique identifier (optional, assigned by providers) */
-  id?: string;
+    /** Unique identifier (optional, assigned by providers) */
+    id?: string;
 
-  /** Display title — short, punchy (max ~30 chars for App Store compat) */
-  title: string;
+    /** Display title — short, punchy (max ~30 chars for App Store compat) */
+    title: string;
 
-  /** Short teaser shown on cards/previews (max ~50 chars) */
-  shortDescription: string;
+    /** Short teaser shown on cards/previews (max ~50 chars) */
+    shortDescription: string;
 
-  /** Longer description for detail views (max ~120 chars) */
-  longDescription: string;
+    /** Longer description for detail views (max ~120 chars) */
+    longDescription: string;
 
-  /** When the event starts */
-  startDate: Date;
+    /** When the event starts */
+    startDate: Date;
 
-  /** When the event ends */
-  endDate: Date;
+    /** When the event ends */
+    endDate: Date;
 
-  /** Event category */
-  badge: BroadcastBadge;
+    /** Event category */
+    badge: BroadcastBadge;
 
-  /** Who should see this */
-  audience: BroadcastAudience;
+    /** Who should see this */
+    audience: BroadcastAudience;
 
-  /** Normal or high visibility */
-  priority: "high" | "normal";
+    /** Normal or high visibility */
+    priority: 'high' | 'normal';
 
-  /** Deep link URL into the app/site */
-  deepLink?: string;
+    /** Deep link URL into the app/site */
+    deepLink?: string;
 
-  /** Whether participation requires a purchase */
-  requiresPurchase?: boolean;
+    /** Whether participation requires a purchase */
+    requiresPurchase?: boolean;
 
-  /** Regional availability (ISO 3166-1 alpha-2 codes). Undefined = all regions. */
-  territories?: string[];
+    /** Regional availability (ISO 3166-1 alpha-2 codes). Undefined = all regions. */
+    territories?: string[];
 
-  /** URL to an image for the event card — landscape 16:9 (e.g. 1920x1080) */
-  cardImageUrl?: string;
+    /** URL to an image for the event card — landscape 16:9 (e.g. 1920x1080) */
+    cardImageUrl?: string;
 
-  /** URL to an image for the event detail page — portrait 9:16 (e.g. 1080x1920) */
-  detailImageUrl?: string;
+    /** URL to an image for the event detail page — portrait 9:16 (e.g. 1080x1920) */
+    detailImageUrl?: string;
 }
 
 export type BroadcastBadge =
-  | "challenge"
-  | "competition"
-  | "live-event"
-  | "major-update"
-  | "new-season"
-  | "premiere"
-  | "special-event";
+    | 'challenge'
+    | 'competition'
+    | 'live-event'
+    | 'major-update'
+    | 'new-season'
+    | 'premiere'
+    | 'special-event';
 
-export type BroadcastAudience = "active-users" | "all" | "lapsed-users" | "new-users";
+export type BroadcastAudience = 'active-users' | 'all' | 'lapsed-users' | 'new-users';
 
 /**
  * Result of sending a broadcast to a provider.
  */
 export interface BroadcastResult {
-  /** Provider-assigned ID */
-  id: string;
+    /** Provider-assigned ID */
+    id: string;
 
-  /** Provider name (e.g. "apple-app-store") */
-  provider: string;
+    /** Provider name (e.g. "apple-app-store") */
+    provider: string;
 
-  /** Current status */
-  status: "approved" | "created" | "failed" | "published" | "rejected" | "submitted";
+    /** Current status */
+    status: 'approved' | 'created' | 'failed' | 'published' | 'rejected' | 'submitted';
 
-  /** Raw response from the provider (for debugging) */
-  raw?: unknown;
+    /** Raw response from the provider (for debugging) */
+    raw?: unknown;
 }
 
 /**
  * Port that all broadcast providers must implement.
  */
 export interface BroadcastProviderPort {
-  /** Provider identifier */
-  readonly name: string;
+    /** Provider identifier */
+    readonly name: string;
 
-  /** Create and submit a broadcast */
-  create(broadcast: Broadcast): Promise<BroadcastResult>;
+    /** Create and submit a broadcast */
+    create(broadcast: Broadcast): Promise<BroadcastResult>;
 
-  /** Update an existing broadcast by provider ID */
-  update(id: string, broadcast: Partial<Broadcast>): Promise<BroadcastResult>;
+    /** Update an existing broadcast by provider ID */
+    update(id: string, broadcast: Partial<Broadcast>): Promise<BroadcastResult>;
 
-  /** Delete/cancel a broadcast by provider ID */
-  delete(id: string): Promise<void>;
+    /** Delete/cancel a broadcast by provider ID */
+    delete(id: string): Promise<void>;
 
-  /** List active broadcasts */
-  list(): Promise<BroadcastResult[]>;
+    /** List active broadcasts */
+    list(): Promise<BroadcastResult[]>;
 }

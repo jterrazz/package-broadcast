@@ -1,8 +1,8 @@
 {
-  "extends": "@jterrazz/typescript/presets/tsconfig/node",
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules"],
-  "compilerOptions": {
-    "skipLibCheck": true
-  }
+    "extends": "@jterrazz/typescript/presets/tsconfig/node",
+    "include": ["**/*.ts"],
+    "exclude": ["node_modules", "*.config.ts"],
+    "compilerOptions": {
+        "skipLibCheck": true
+    }
 }

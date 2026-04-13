@@ -11,28 +11,28 @@ npm install @jterrazz/broadcast
 ## Quick Start
 
 ```ts
-import { AppleAppStoreAdapter, sendBroadcast } from "@jterrazz/broadcast";
+import { AppleAppStoreAdapter, sendBroadcast } from '@jterrazz/broadcast';
 
 const apple = new AppleAppStoreAdapter({
-  issuerId: "your-issuer-id",
-  keyId: "YOUR_KEY_ID",
-  privateKey: "-----BEGIN PRIVATE KEY-----\n...",
-  appId: "6444444444",
+    issuerId: 'your-issuer-id',
+    keyId: 'YOUR_KEY_ID',
+    privateKey: '-----BEGIN PRIVATE KEY-----\n...',
+    appId: '6444444444',
 });
 
 await sendBroadcast(
-  {
-    title: "Season 2 is live!",
-    shortDescription: "New features and challenges await",
-    longDescription: "Explore new game modes, leaderboards, and exclusive rewards.",
-    badge: "new-season",
-    audience: "all",
-    priority: "high",
-    startDate: new Date("2026-04-01"),
-    endDate: new Date("2026-04-30"),
-    deepLink: "myapp://seasons/2",
-  },
-  [apple],
+    {
+        title: 'Season 2 is live!',
+        shortDescription: 'New features and challenges await',
+        longDescription: 'Explore new game modes, leaderboards, and exclusive rewards.',
+        badge: 'new-season',
+        audience: 'all',
+        priority: 'high',
+        startDate: new Date('2026-04-01'),
+        endDate: new Date('2026-04-30'),
+        deepLink: 'myapp://seasons/2',
+    },
+    [apple],
 );
 ```
 
@@ -72,8 +72,8 @@ Creates [In-App Events](https://developer.apple.com/app-store/in-app-events/) on
 
 1. Go to [App Store Connect](https://appstoreconnect.apple.com) → **Users and Access** → **Integrations** → **App Store Connect API**
 2. Click **Generate API Key**
-   - Name: e.g. `signews-broadcast`
-   - Access: **Admin** (required for In-App Events)
+    - Name: e.g. `signews-broadcast`
+    - Access: **Admin** (required for In-App Events)
 3. **Download the `.p8` file** — you can only download it once
 4. Note the **Key ID** shown in the table (e.g. `2X9R4HXF34`)
 5. Copy the **Issuer ID** shown at the top of the page
@@ -82,38 +82,38 @@ Creates [In-App Events](https://developer.apple.com/app-store/in-app-events/) on
 #### Usage
 
 ```ts
-import { readFileSync } from "node:fs";
-import { AppleAppStoreAdapter } from "@jterrazz/broadcast";
+import { readFileSync } from 'node:fs';
+import { AppleAppStoreAdapter } from '@jterrazz/broadcast';
 
 const apple = new AppleAppStoreAdapter({
-  issuerId: "57246542-96fe-1a63-e053-0824d011072a",
-  keyId: "2X9R4HXF34",
-  privateKey: readFileSync("./AuthKey_2X9R4HXF34.p8", "utf-8"),
-  appId: "6444444444",
+    issuerId: '57246542-96fe-1a63-e053-0824d011072a',
+    keyId: '2X9R4HXF34',
+    privateKey: readFileSync('./AuthKey_2X9R4HXF34.p8', 'utf-8'),
+    appId: '6444444444',
 });
 
 // Create an event
 const result = await apple.create({
-  title: "Election Live Coverage",
-  shortDescription: "Real-time results & analysis",
-  longDescription: "Follow live election coverage with AI-powered fact-checking and analysis.",
-  badge: "live-event",
-  audience: "all",
-  priority: "high",
-  startDate: new Date("2026-11-03"),
-  endDate: new Date("2026-11-04"),
-  deepLink: "signews://live/election-2026",
-  territories: ["USA", "FRA"],
+    title: 'Election Live Coverage',
+    shortDescription: 'Real-time results & analysis',
+    longDescription: 'Follow live election coverage with AI-powered fact-checking and analysis.',
+    badge: 'live-event',
+    audience: 'all',
+    priority: 'high',
+    startDate: new Date('2026-11-03'),
+    endDate: new Date('2026-11-04'),
+    deepLink: 'signews://live/election-2026',
+    territories: ['USA', 'FRA'],
 });
 
 // List existing events
 const events = await apple.list();
 
 // Update an event
-await apple.update("event-id", { priority: "normal" });
+await apple.update('event-id', { priority: 'normal' });
 
 // Delete an event
-await apple.delete("event-id");
+await apple.delete('event-id');
 ```
 
 #### Field Mapping
@@ -147,16 +147,16 @@ await apple.delete("event-id");
 ## Multi-Provider Example
 
 ```ts
-import { sendBroadcast } from "@jterrazz/broadcast";
+import { sendBroadcast } from '@jterrazz/broadcast';
 
 const results = await sendBroadcast(broadcast, [apple, google, push]);
 
 for (const result of results) {
-  if (result.status === "failed") {
-    console.error(`${result.provider} failed:`, result.raw);
-  } else {
-    console.log(`${result.provider}: ${result.status} (${result.id})`);
-  }
+    if (result.status === 'failed') {
+        console.error(`${result.provider} failed:`, result.raw);
+    } else {
+        console.log(`${result.provider}: ${result.status} (${result.id})`);
+    }
 }
 ```
 
@@ -165,24 +165,24 @@ for (const result of results) {
 Implement `BroadcastProviderPort` to add your own channel:
 
 ```ts
-import type { BroadcastProviderPort } from "@jterrazz/broadcast";
+import type { BroadcastProviderPort } from '@jterrazz/broadcast';
 
 class SlackProvider implements BroadcastProviderPort {
-  readonly name = "slack";
+    readonly name = 'slack';
 
-  async create(broadcast) {
-    // Post to Slack webhook
-  }
+    async create(broadcast) {
+        // Post to Slack webhook
+    }
 
-  async update(id, broadcast) {
-    /* ... */
-  }
-  async delete(id) {
-    /* ... */
-  }
-  async list() {
-    /* ... */
-  }
+    async update(id, broadcast) {
+        /* ... */
+    }
+    async delete(id) {
+        /* ... */
+    }
+    async list() {
+        /* ... */
+    }
 }
 ```
 

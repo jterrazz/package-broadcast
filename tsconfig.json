@@ -1,5 +1,5 @@
 {
-    "extends": "@jterrazz/typescript/presets/tsconfig/node",
+    "extends": "@jterrazz/typescript/tsconfig/node",
     "include": ["**/*.ts"],
     "exclude": ["node_modules", "*.config.ts"],
     "compilerOptions": {

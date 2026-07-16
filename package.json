@@ -29,7 +29,6 @@
         "jose": "^6.2.2"
     },
     "devDependencies": {
-        "@jterrazz/test": "^5.3.2",
         "@jterrazz/typescript": "^6.0.0",
         "@types/node": "^25.5.0",
         "vitest": "^4.1.2"

@@ -33,6 +33,18 @@ const makeBroadcast = (overrides?: Partial<Broadcast>): Broadcast => ({
     ...overrides,
 });
 
+const makeProvider = (name: string): BroadcastProviderPort => ({
+    create: vi.fn().mockResolvedValue({
+        id: `${name}-1`,
+        provider: name,
+        status: 'created',
+    } as BroadcastResult),
+    delete: vi.fn(),
+    list: vi.fn(),
+    name,
+    update: vi.fn(),
+});
+
 function mockResponse(
     status: number,
     body: unknown,
@@ -242,18 +254,6 @@ describe('Multi-provider fan-out', () => {
 
     test('preserves provider order in results', async () => {
         // Given — three providers named alpha, beta, gamma
-        const makeProvider = (name: string): BroadcastProviderPort => ({
-            create: vi.fn().mockResolvedValue({
-                id: `${name}-1`,
-                provider: name,
-                status: 'created',
-            } as BroadcastResult),
-            delete: vi.fn(),
-            list: vi.fn(),
-            name,
-            update: vi.fn(),
-        });
-
         const providers = [makeProvider('alpha'), makeProvider('beta'), makeProvider('gamma')];
 
         const results = await sendBroadcast(makeBroadcast(), providers);

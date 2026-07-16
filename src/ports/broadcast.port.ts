@@ -82,14 +82,14 @@ export interface BroadcastProviderPort {
     readonly name: string;
 
     /** Create and submit a broadcast */
-    create(broadcast: Broadcast): Promise<BroadcastResult>;
+    create: (broadcast: Broadcast) => Promise<BroadcastResult>;
 
     /** Update an existing broadcast by provider ID */
-    update(id: string, broadcast: Partial<Broadcast>): Promise<BroadcastResult>;
+    update: (id: string, broadcast: Partial<Broadcast>) => Promise<BroadcastResult>;
 
     /** Delete/cancel a broadcast by provider ID */
-    delete(id: string): Promise<void>;
+    delete: (id: string) => Promise<void>;
 
     /** List active broadcasts */
-    list(): Promise<BroadcastResult[]>;
+    list: () => Promise<BroadcastResult[]>;
 }

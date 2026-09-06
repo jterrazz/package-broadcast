@@ -1,9 +1,7 @@
 node_modules/
 .idea
 .DS_Store
-disttest-local.mjs
-test-real.mjs
-test-auth.mjs
-
 dist
-test-local.mjs
+
+# Build, test and lint artefacts (@jterrazz/typescript)
+.artifacts/

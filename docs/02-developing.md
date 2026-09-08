@@ -1,0 +1,44 @@
+# Developing
+
+How a change to this package is made: the toolchain it wires, the commands the Makefile and `package.json` expose, and where a change opens a file.
+
+## Setup
+
+```bash
+npm install
+```
+
+No build step is needed to run the tests or the lint — they read `src/` directly. `npm run build` (`typescript bundle`) is only needed to produce the `dist/` this package publishes.
+
+## The toolchain
+
+`@jterrazz/typescript` is the sole devDependency the toolchain needs: `tsconfig.json` extends its `node` preset, `oxlint.config.ts` extends its `oxlint.node` preset, and `oxfmt.config.ts` hands its config straight to `oxfmt`. `npm run lint` is `typescript check` — type-check, lint, format-check, the gitignore/artefact convention, unused-code, and, run from the repository root, the manual-layout gate this corpus now answers to. `npm run lint:fix` is `typescript fix`.
+
+| Command            | Runs                                               |
+| ------------------ | -------------------------------------------------- |
+| `npm test`         | `vitest --run` — see [Testing](03-testing.md)      |
+| `npm run lint`     | `typescript check`                                 |
+| `npm run lint:fix` | `typescript fix`                                   |
+| `npm run build`    | `typescript bundle` — ESM + CJS + types to `dist/` |
+
+The `Makefile` wraps the same three behind `make install` / `make build` / `make lint` / `make test`, each depending on a `node_modules/.install` sentinel keyed off `package-lock.json` so a stale install is never silently reused.
+
+Build, test and lint artefacts live under `.artifacts/<tool>/`, per the toolchain's own convention — nothing this package's own tooling writes should land anywhere else.
+
+## Where a change opens a file
+
+| Change                                             | File                                                                                                 |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| A field on the broadcast model, or a status value  | `src/ports/broadcast.port.ts`                                                                        |
+| The fan-out behaviour (concurrency, failure shape) | `src/send-broadcast.ts`                                                                              |
+| A new channel                                      | a new directory under `src/adapters/`, exported from `src/index.ts` — see [Channels](05-channels.md) |
+| Apple-specific behaviour                           | `src/adapters/apple/apple-app-store.adapter.ts` or `apple-auth.ts`                                   |
+| What a consumer can import                         | `src/index.ts`                                                                                       |
+
+A file named `*.port.ts` holds a contract, never an implementation; a file named `*.adapter.ts` holds one channel's implementation and nothing another channel needs. A test lives beside the file it proves, named `*.test.ts` — see [Testing](03-testing.md) for the one exception.
+
+## Conventions
+
+- Every export a consumer can reach passes through `src/index.ts` — no deep import path is public API.
+- A closed union (`BroadcastBadge`, `BroadcastAudience`, a result's `status`) is exhaustively mapped wherever an adapter translates it; a new value added to the port is a compile error in every adapter until it is handled.
+- A provider never throws past its own boundary in `sendBroadcast` — `create`/`update`/`delete`/`list` may reject, and the core turns that rejection into a `failed` result. An adapter's own errors (`AppleAppStoreError`) still carry enough to debug a rejection when one is inspected directly.

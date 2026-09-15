@@ -4,12 +4,11 @@ import {
     AppleAppStoreAdapter,
     type Broadcast,
     type BroadcastProviderPort,
-    type BroadcastResult,
     sendBroadcast,
 } from '../../src/index.js';
 
 // Mock the JWT generation to avoid needing a real private key
-vi.mock('../../src/adapters/apple/apple-auth.js', () => ({
+vi.mock(import('../../src/adapters/apple/apple-authentication.js'), () => ({
     createAppleJwt: vi.fn().mockResolvedValue('mock-jwt-token'),
 }));
 
@@ -38,31 +37,25 @@ const makeProvider = (name: string): BroadcastProviderPort => ({
         id: `${name}-1`,
         provider: name,
         status: 'created',
-    } as BroadcastResult),
+    }),
     delete: vi.fn(),
     list: vi.fn(),
     name,
     update: vi.fn(),
 });
 
-function mockResponse(
-    status: number,
-    body: unknown,
-    noContent = false,
-    textBody?: string,
-): Response {
+/** A real `Response`, so the adapter reads the object a `fetch` would have handed it. */
+function mockResponse(status: number, body: unknown, textBody?: string): Response {
     const ok = status >= 200 && status < 300;
-    return {
-        headers: new Headers({ 'Content-Type': 'application/json' }),
-        json: () => Promise.resolve(body),
-        ok,
+
+    return new Response(status === 204 ? null : (textBody ?? JSON.stringify(body)), {
+        headers: { 'Content-Type': 'application/json' },
         status,
         statusText: ok ? 'OK' : 'Error',
-        text: () => Promise.resolve(textBody ?? JSON.stringify(body)),
-    } as Response;
+    });
 }
 
-describe('Provider lifecycle', () => {
+describe('provider lifecycle', () => {
     let adapter: AppleAppStoreAdapter;
     let fetchSpy: ReturnType<typeof vi.fn>;
 
@@ -119,8 +112,8 @@ describe('Provider lifecycle', () => {
         expect(createResult.id).toBe('event-1');
         expect(createResult.status).toBe('created');
         expect(listResults).toHaveLength(1);
-        expect(listResults[0].id).toBe('event-1');
-        expect(listResults[0].status).toBe('created');
+        expect(listResults[0]?.id).toBe('event-1');
+        expect(listResults[0]?.status).toBe('created');
     });
 
     test('creates, updates, then deletes an event', async () => {
@@ -148,30 +141,31 @@ describe('Provider lifecycle', () => {
                 },
             }),
         );
-        fetchSpy.mockResolvedValueOnce(mockResponse(204, null, true));
+        fetchSpy.mockResolvedValueOnce(mockResponse(204, null));
 
         const createResult = await adapter.create(makeBroadcast());
         const updateResult = await adapter.update(createResult.id, { priority: 'high' });
         await adapter.delete(createResult.id);
 
         // Then — all three API calls were made with the correct HTTP methods
-        expect(fetchSpy).toHaveBeenCalledTimes(4); // Create event + localization + update + delete
-        expect(fetchSpy.mock.calls[0][1].method).toBe('POST');
-        expect(fetchSpy.mock.calls[1][1].method).toBe('POST');
-        expect(fetchSpy.mock.calls[2][1].method).toBe('PATCH');
-        expect(fetchSpy.mock.calls[3][1].method).toBe('DELETE');
+        // Create event, localization, update, delete.
+        expect(fetchSpy).toHaveBeenCalledTimes(4);
+        expect(fetchSpy.mock.calls[0]?.[1].method).toBe('POST');
+        expect(fetchSpy.mock.calls[1]?.[1].method).toBe('POST');
+        expect(fetchSpy.mock.calls[2]?.[1].method).toBe('PATCH');
+        expect(fetchSpy.mock.calls[3]?.[1].method).toBe('DELETE');
 
         expect(createResult.id).toBe('event-1');
         expect(updateResult.id).toBe('event-1');
 
-        const updateBody = JSON.parse(fetchSpy.mock.calls[2][1].body);
+        const updateBody = JSON.parse(fetchSpy.mock.calls[2]?.[1].body);
         expect(updateBody.data.attributes.priority).toBe('HIGH');
     });
 
     test('handles create failure then retries successfully', async () => {
         // Given — first create returns 500, second create returns 201
         fetchSpy.mockResolvedValueOnce(
-            mockResponse(500, null, false, '{"errors":[{"detail":"Internal Server Error"}]}'),
+            mockResponse(500, null, '{"errors":[{"detail":"Internal Server Error"}]}'),
         );
         fetchSpy.mockResolvedValueOnce(
             mockResponse(201, {
@@ -199,7 +193,7 @@ describe('Provider lifecycle', () => {
     });
 });
 
-describe('Multi-provider fan-out', () => {
+describe('multi-provider fan-out', () => {
     let fetchSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
@@ -245,11 +239,11 @@ describe('Multi-provider fan-out', () => {
 
         expect(created).toHaveLength(2);
         expect(failed).toHaveLength(1);
-        expect(failed[0].provider).toBe('beta');
+        expect(failed[0]?.provider).toBe('beta');
 
-        expect(providerA.create).toHaveBeenCalledTimes(1);
-        expect(providerB.create).toHaveBeenCalledTimes(1);
-        expect(providerC.create).toHaveBeenCalledTimes(1);
+        expect(providerA.create).toHaveBeenCalledOnce();
+        expect(providerB.create).toHaveBeenCalledOnce();
+        expect(providerC.create).toHaveBeenCalledOnce();
     });
 
     test('preserves provider order in results', async () => {
@@ -260,8 +254,8 @@ describe('Multi-provider fan-out', () => {
 
         // Then — results array preserves the same order as the input providers
         expect(results).toHaveLength(3);
-        expect(results[0].provider).toBe('alpha');
-        expect(results[1].provider).toBe('beta');
-        expect(results[2].provider).toBe('gamma');
+        expect(results[0]?.provider).toBe('alpha');
+        expect(results[1]?.provider).toBe('beta');
+        expect(results[2]?.provider).toBe('gamma');
     });
 });

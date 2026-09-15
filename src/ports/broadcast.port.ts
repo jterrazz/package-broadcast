@@ -2,7 +2,7 @@
  * Core broadcast model — a platform-agnostic announcement
  * that can be distributed to multiple channels.
  */
-export interface Broadcast {
+export type Broadcast = {
     /** Unique identifier (optional, assigned by providers) */
     id?: string;
 
@@ -44,7 +44,7 @@ export interface Broadcast {
 
     /** URL to an image for the event detail page — portrait 9:16 (e.g. 1080x1920) */
     detailImageUrl?: string;
-}
+};
 
 export type BroadcastBadge =
     | 'challenge'
@@ -60,7 +60,7 @@ export type BroadcastAudience = 'active-users' | 'all' | 'lapsed-users' | 'new-u
 /**
  * Result of sending a broadcast to a provider.
  */
-export interface BroadcastResult {
+export type BroadcastResult = {
     /** Provider-assigned ID */
     id: string;
 
@@ -72,12 +72,12 @@ export interface BroadcastResult {
 
     /** Raw response from the provider (for debugging) */
     raw?: unknown;
-}
+};
 
 /**
  * Port that all broadcast providers must implement.
  */
-export interface BroadcastProviderPort {
+export type BroadcastProviderPort = {
     /** Provider identifier */
     readonly name: string;
 
@@ -92,4 +92,4 @@ export interface BroadcastProviderPort {
 
     /** List active broadcasts */
     list: () => Promise<BroadcastResult[]>;
-}
+};

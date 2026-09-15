@@ -23,7 +23,7 @@ No adapter-specific type crosses this file. A provider translates the port's sha
 
 ## The core
 
-`sendBroadcast` (`src/send-broadcast.ts:7`) is the only orchestration this package does: it calls `create` on every provider with `Promise.allSettled` and maps a rejection into a `BroadcastResult` with `status: 'failed'` instead of letting one provider's failure reject the whole call. A caller always gets back one result per provider, in the same order the providers were given, whichever succeeded and whichever did not.
+`sendBroadcast` (`src/send-broadcast.ts:11`) is the only orchestration this package does: it calls `create` on every provider at once and catches each provider's rejection where it is raised, turning it into a `BroadcastResult` with `status: 'failed'` instead of letting one provider's failure reject the whole call. A caller always gets back one result per provider, in the same order the providers were given, whichever succeeded and whichever did not.
 
 ## The adapters
 

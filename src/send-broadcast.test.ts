@@ -1,6 +1,10 @@
 import { describe, expect, test, vi } from 'vitest';
 
-import type { Broadcast, BroadcastProviderPort, BroadcastResult } from './ports/broadcast.port.js';
+import {
+    type Broadcast,
+    type BroadcastProviderPort,
+    type BroadcastResult,
+} from './ports/broadcast.port.js';
 import { sendBroadcast } from './send-broadcast.js';
 
 const makeBroadcast = (overrides?: Partial<Broadcast>): Broadcast => ({
@@ -38,8 +42,8 @@ describe('sendBroadcast', () => {
         const results = await sendBroadcast(broadcast, [provider]);
 
         expect(results).toHaveLength(1);
-        expect(results[0].provider).toBe('test-provider');
-        expect(results[0].status).toBe('created');
+        expect(results[0]?.provider).toBe('test-provider');
+        expect(results[0]?.status).toBe('created');
         expect(provider.create).toHaveBeenCalledWith(broadcast);
     });
 
@@ -53,8 +57,8 @@ describe('sendBroadcast', () => {
         const results = await sendBroadcast(broadcast, [provider1, provider2]);
 
         expect(results).toHaveLength(2);
-        expect(results[0].provider).toBe('apple');
-        expect(results[1].provider).toBe('google');
+        expect(results[0]?.provider).toBe('apple');
+        expect(results[1]?.provider).toBe('google');
     });
 
     test('should handle provider failures gracefully', async () => {
@@ -72,9 +76,9 @@ describe('sendBroadcast', () => {
         const results = await sendBroadcast(makeBroadcast(), [successProvider, failProvider]);
 
         expect(results).toHaveLength(2);
-        expect(results[0].status).toBe('created');
-        expect(results[1].status).toBe('failed');
-        expect(results[1].provider).toBe('broken');
+        expect(results[0]?.status).toBe('created');
+        expect(results[1]?.status).toBe('failed');
+        expect(results[1]?.provider).toBe('broken');
     });
 
     test('should return empty array for empty providers', async () => {
@@ -108,7 +112,7 @@ describe('sendBroadcast', () => {
         const results = await sendBroadcast(makeBroadcast(), [fail1, fail2]);
 
         expect(results).toHaveLength(2);
-        expect(results.every((r) => r.status === 'failed')).toBe(true);
+        expect(results.every((r) => r.status === 'failed')).toBeTruthy();
     });
 
     test('should include error in raw field on failure', async () => {
@@ -124,7 +128,7 @@ describe('sendBroadcast', () => {
         // Then — raw field contains the error
         const results = await sendBroadcast(makeBroadcast(), [failProvider]);
 
-        expect(results[0].raw).toBeInstanceOf(Error);
-        expect((results[0].raw as Error).message).toBe('Network timeout');
+        expect(results[0]?.raw).toBeInstanceOf(Error);
+        expect(results[0]?.raw).toMatchObject({ message: 'Network timeout' });
     });
 });

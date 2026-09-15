@@ -1,0 +1,9 @@
+{
+    "eslint/no-await-in-loop": 1,
+    "typescript/no-unsafe-argument": 13,
+    "typescript/no-unsafe-assignment": 22,
+    "typescript/no-unsafe-member-access": 62,
+    "typescript/no-unsafe-type-assertion": 2,
+    "vitest/max-expects": 27,
+    "vitest/require-mock-type-parameters": 41
+}

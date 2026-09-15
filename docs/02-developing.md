@@ -25,6 +25,8 @@ The `Makefile` wraps the same three behind `make install` / `make build` / `make
 
 Build, test and lint artefacts live under `.artifacts/<tool>/`, per the toolchain's own convention — nothing this package's own tooling writes should land anywhere else.
 
+`oxlint.baseline.json` at the root is the one file that records debt rather than intent: the diagnostics the v10 rulebook found on adoption that were not cheap to pay, counted per rule. The oxlint pass is judged against it, and it may only shrink — a rule going up, a rule nobody recorded, and an entry that has reached zero all fail the run. It is a ledger to empty, not a setting to keep.
+
 ## Where a change opens a file
 
 | Change                                             | File                                                                                                 |

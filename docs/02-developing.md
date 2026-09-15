@@ -12,7 +12,11 @@ No build step is needed to run the tests or the lint — they read `src/` direct
 
 ## The toolchain
 
-`@jterrazz/typescript` is the sole devDependency the toolchain needs, and this package names one profile of it: `library`, the profile for a package published to a registry. `tsconfig.json` extends its `library` preset, `oxlint.config.ts` extends the `library` rule set, and `oxfmt.config.ts` hands its config straight to `oxfmt`. Each of the two lint configs names the type of its default export, because the `library` tsconfig carries `isolatedDeclarations` and will not infer one. `npm run lint` is `typescript check` — type-check, lint, format-check, the gitignore/artefact convention, unused-code, and, run from the repository root, the manual-layout gate this corpus now answers to. `npm run lint:fix` is `typescript fix`.
+`@jterrazz/typescript` is the sole devDependency the toolchain needs, and this package names one profile of it: `library`, the profile for a package published to a registry. `tsconfig.json` extends its `library` preset, `oxlint.config.ts` extends the `library` rule set, and `oxfmt.config.ts` hands its config straight to `oxfmt`.
+
+Each of the two lint configs names the type of its default export, because the `library` tsconfig carries `isolatedDeclarations` and will not infer one. That preset is also what forbids an `enum`, a `namespace` and a parameter property anywhere in `src/` — a published package emits declarations, and those three cannot be erased.
+
+`npm run lint` is `typescript check` — type-check, lint, format-check, the gitignore/artefact convention, unused-code, and, run from the repository root, the manual-layout gate this corpus now answers to. `npm run lint:fix` is `typescript fix`.
 
 | Command            | Runs                                               |
 | ------------------ | -------------------------------------------------- |

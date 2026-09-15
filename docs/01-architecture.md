@@ -9,8 +9,8 @@ src/
 ├── send-broadcast.ts            # sendBroadcast(broadcast, providers) — the fan-out
 ├── adapters/
 │   └── apple/
-│       ├── apple-authentication.ts   # createAppleJwt — ES256 JWT for App Store Connect
-│       ├── apple-app-store.error.ts  # AppleAppStoreError — the status code and the body
+│       ├── apple-authentication.ts    # createAppleJwt — ES256 JWT for App Store Connect
+│       ├── apple-app-store.error.ts   # AppleAppStoreError — the status code and the body
 │       └── apple-app-store.adapter.ts # AppleAppStoreAdapter
 └── index.ts                     # the public barrel — every export above and nothing else
 ```

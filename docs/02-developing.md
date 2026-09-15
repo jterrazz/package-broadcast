@@ -12,7 +12,7 @@ No build step is needed to run the tests or the lint — they read `src/` direct
 
 ## The toolchain
 
-`@jterrazz/typescript` is the sole devDependency the toolchain needs: `tsconfig.json` extends its `node` preset, `oxlint.config.ts` extends its `oxlint.node` preset, and `oxfmt.config.ts` hands its config straight to `oxfmt`. `npm run lint` is `typescript check` — type-check, lint, format-check, the gitignore/artefact convention, unused-code, and, run from the repository root, the manual-layout gate this corpus now answers to. `npm run lint:fix` is `typescript fix`.
+`@jterrazz/typescript` is the sole devDependency the toolchain needs, and this package names one profile of it: `library`, the profile for a package published to a registry. `tsconfig.json` extends its `library` preset, `oxlint.config.ts` extends the `library` rule set, and `oxfmt.config.ts` hands its config straight to `oxfmt`. Each of the two lint configs names the type of its default export, because the `library` tsconfig carries `isolatedDeclarations` and will not infer one. `npm run lint` is `typescript check` — type-check, lint, format-check, the gitignore/artefact convention, unused-code, and, run from the repository root, the manual-layout gate this corpus now answers to. `npm run lint:fix` is `typescript fix`.
 
 | Command            | Runs                                               |
 | ------------------ | -------------------------------------------------- |
@@ -32,7 +32,7 @@ Build, test and lint artefacts live under `.artifacts/<tool>/`, per the toolchai
 | A field on the broadcast model, or a status value  | `src/ports/broadcast.port.ts`                                                                        |
 | The fan-out behaviour (concurrency, failure shape) | `src/send-broadcast.ts`                                                                              |
 | A new channel                                      | a new directory under `src/adapters/`, exported from `src/index.ts` — see [Channels](05-channels.md) |
-| Apple-specific behaviour                           | `src/adapters/apple/apple-app-store.adapter.ts` or `apple-auth.ts`                                   |
+| Apple-specific behaviour                           | `src/adapters/apple/apple-app-store.adapter.ts` or `apple-authentication.ts`                         |
 | What a consumer can import                         | `src/index.ts`                                                                                       |
 
 A file named `*.port.ts` holds a contract, never an implementation; a file named `*.adapter.ts` holds one channel's implementation and nothing another channel needs. A test lives beside the file it proves, named `*.test.ts` — see [Testing](03-testing.md) for the one exception.

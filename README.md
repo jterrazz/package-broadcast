@@ -16,7 +16,7 @@ import { AppleAppStoreAdapter, sendBroadcast } from '@jterrazz/broadcast';
 const apple = new AppleAppStoreAdapter({
     issuerId: 'your-issuer-id',
     keyId: 'YOUR_KEY_ID',
-    privateKey: '-----BEGIN PRIVATE KEY-----\n...',
+    privateKey: '-----BEGIN PRIVATE KEY-----\n...', // example — the .p8 App Store Connect issued
     appId: '6444444444',
 });
 

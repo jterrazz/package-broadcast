@@ -1,8 +1,3 @@
 {
-    "extends": "@jterrazz/typescript/tsconfig/node",
-    "include": ["**/*.ts"],
-    "exclude": ["node_modules", "*.config.ts"],
-    "compilerOptions": {
-        "skipLibCheck": true
-    }
+    "extends": "@jterrazz/typescript/tsconfig/library"
 }

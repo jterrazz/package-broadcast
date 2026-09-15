@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import type { Broadcast } from '../../ports/broadcast.port.js';
-import { AppleAppStoreAdapter, AppleAppStoreError } from './apple-app-store.adapter.js';
+import { type Broadcast } from '../../ports/broadcast.port.js';
+import { AppleAppStoreAdapter } from './apple-app-store.adapter.js';
+import { AppleAppStoreError } from './apple-app-store.error.js';
 
 // Mock the JWT generation to avoid needing a real private key
-vi.mock('./apple-auth.js', () => ({
+vi.mock(import('./apple-authentication.js'), () => ({
     createAppleJwt: vi.fn().mockResolvedValue('mock-jwt-token'),
 }));
 
@@ -30,7 +31,7 @@ const makeBroadcast = (overrides?: Partial<Broadcast>): Broadcast => ({
     ...overrides,
 });
 
-describe('AppleAppStoreAdapter', () => {
+describe('appleAppStoreAdapter', () => {
     let adapter: AppleAppStoreAdapter;
     let fetchSpy: ReturnType<typeof vi.fn>;
 
@@ -79,7 +80,7 @@ describe('AppleAppStoreAdapter', () => {
             // Verify event creation request
             expect(fetchSpy).toHaveBeenCalledTimes(2);
 
-            const [eventUrl, eventOptions] = fetchSpy.mock.calls[0];
+            const [eventUrl, eventOptions] = fetchSpy.mock.calls[0] ?? [];
             expect(eventUrl).toBe(`${BASE_URL}/appEvents`);
             expect(eventOptions.method).toBe('POST');
 
@@ -95,7 +96,7 @@ describe('AppleAppStoreAdapter', () => {
             expect(eventBody.data.relationships.app.data.id).toBe('6444444444');
 
             // Verify localization request
-            const [locUrl, locOptions] = fetchSpy.mock.calls[1];
+            const [locUrl, locOptions] = fetchSpy.mock.calls[1] ?? [];
             expect(locUrl).toBe(`${BASE_URL}/appEventLocalizations`);
             expect(locOptions.method).toBe('POST');
 
@@ -125,7 +126,7 @@ describe('AppleAppStoreAdapter', () => {
             // Then — the authorization header contains the JWT token
             await adapter.create(makeBroadcast());
 
-            const [, options] = fetchSpy.mock.calls[0];
+            const [, options] = fetchSpy.mock.calls[0] ?? [];
             expect(options.headers.Authorization).toBe('Bearer mock-jwt-token');
             expect(options.headers['Content-Type']).toBe('application/json');
         });
@@ -146,69 +147,61 @@ describe('AppleAppStoreAdapter', () => {
             // Then — the priority is mapped to "HIGH"
             await adapter.create(makeBroadcast({ priority: 'high' }));
 
-            const eventBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
+            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
             expect(eventBody.data.attributes.priority).toBe('HIGH');
         });
 
-        test('should map all badge types correctly', async () => {
-            // Given — all possible badge type inputs
-            const badges = [
-                ['challenge', 'CHALLENGE'],
-                ['competition', 'COMPETITION'],
-                ['live-event', 'LIVE_EVENT'],
-                ['major-update', 'MAJOR_UPDATE'],
-                ['new-season', 'NEW_SEASON'],
-                ['premiere', 'PREMIERE'],
-                ['special-event', 'SPECIAL_EVENT'],
-            ] as const;
+        test.each([
+            ['challenge', 'CHALLENGE'],
+            ['competition', 'COMPETITION'],
+            ['live-event', 'LIVE_EVENT'],
+            ['major-update', 'MAJOR_UPDATE'],
+            ['new-season', 'NEW_SEASON'],
+            ['premiere', 'PREMIERE'],
+            ['special-event', 'SPECIAL_EVENT'],
+        ] as const)('should map the %s badge to %s', async (input, expected) => {
+            // Given — an event and a localization Apple accepts
+            fetchSpy.mockResolvedValueOnce(
+                mockResponse(201, {
+                    data: {
+                        attributes: { badge: expected, eventState: 'DRAFT' },
+                        id: 'e-1',
+                        type: 'appEvents',
+                    },
+                }),
+            );
+            fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
 
-            for (const [input, expected] of badges) {
-                fetchSpy.mockResolvedValueOnce(
-                    mockResponse(201, {
-                        data: {
-                            attributes: { badge: expected, eventState: 'DRAFT' },
-                            id: 'e-1',
-                            type: 'appEvents',
-                        },
-                    }),
-                );
-                fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
+            // Then — the badge reaches Apple under its own spelling
+            await adapter.create(makeBroadcast({ badge: input }));
 
-                // Then — each badge is mapped to the correct Apple format
-                await adapter.create(makeBroadcast({ badge: input }));
-
-                const eventBody = JSON.parse(fetchSpy.mock.calls.at(-2)![1].body);
-                expect(eventBody.data.attributes.badge).toBe(expected);
-            }
+            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
+            expect(eventBody.data.attributes.badge).toBe(expected);
         });
 
-        test('should map audience types correctly', async () => {
-            // Given — all possible audience type inputs
-            const audiences = [
-                ['all', 'APPROPRIATE_FOR_ALL_USERS'],
-                ['active-users', 'APPROPRIATE_FOR_ALL_USERS'],
-                ['new-users', 'ATTRACT_NEW_USERS'],
-                ['lapsed-users', 'ATTRACT_LAPSED_USERS'],
-            ] as const;
+        test.each([
+            ['all', 'APPROPRIATE_FOR_ALL_USERS'],
+            ['active-users', 'APPROPRIATE_FOR_ALL_USERS'],
+            ['new-users', 'ATTRACT_NEW_USERS'],
+            ['lapsed-users', 'ATTRACT_LAPSED_USERS'],
+        ] as const)('should map the %s audience to %s', async (input, expected) => {
+            // Given — an event and a localization Apple accepts
+            fetchSpy.mockResolvedValueOnce(
+                mockResponse(201, {
+                    data: {
+                        attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
+                        id: 'e-1',
+                        type: 'appEvents',
+                    },
+                }),
+            );
+            fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
 
-            for (const [input, expected] of audiences) {
-                fetchSpy.mockResolvedValueOnce(
-                    mockResponse(201, {
-                        data: {
-                            attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                            id: 'e-1',
-                            type: 'appEvents',
-                        },
-                    }),
-                );
-                fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
+            // Then — the audience reaches Apple as a purpose
+            await adapter.create(makeBroadcast({ audience: input }));
 
-                // Then — each audience is mapped to the correct Apple purpose
-                await adapter.create(makeBroadcast({ audience: input }));
-
-                const eventBody = JSON.parse(fetchSpy.mock.calls.at(-2)![1].body);
-                expect(eventBody.data.attributes.purpose).toBe(expected);
-            }
+            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
+            expect(eventBody.data.attributes.purpose).toBe(expected);
         });
 
         test('should map requiresPurchase to IN_APP_PURCHASE', async () => {
@@ -227,7 +220,7 @@ describe('AppleAppStoreAdapter', () => {
             // Then — the purchase requirement is set to IN_APP_PURCHASE
             await adapter.create(makeBroadcast({ requiresPurchase: true }));
 
-            const eventBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
+            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
             expect(eventBody.data.attributes.purchaseRequirement).toBe('IN_APP_PURCHASE');
         });
 
@@ -251,13 +244,13 @@ describe('AppleAppStoreAdapter', () => {
                 }),
             );
 
-            const eventBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
+            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
             const schedules = eventBody.data.attributes.territorySchedules;
 
             expect(schedules).toHaveLength(1);
-            expect(schedules[0].territories).toEqual(['USA', 'FRA']);
-            expect(schedules[0].eventStart).toBe('2026-04-01T00:00:00.000Z');
-            expect(schedules[0].eventEnd).toBe('2026-04-15T00:00:00.000Z');
+            expect(schedules[0]?.territories).toStrictEqual(['USA', 'FRA']);
+            expect(schedules[0]?.eventStart).toBe('2026-04-01T00:00:00.000Z');
+            expect(schedules[0]?.eventEnd).toBe('2026-04-15T00:00:00.000Z');
         });
 
         test('should default to USA when no territories specified', async () => {
@@ -274,11 +267,13 @@ describe('AppleAppStoreAdapter', () => {
             fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
 
             // Then — the default territory is USA
-            await adapter.create(makeBroadcast({ territories: undefined }));
+            await adapter.create(makeBroadcast());
 
-            const eventBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
+            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
             expect(eventBody.data.attributes.territorySchedules).toHaveLength(1);
-            expect(eventBody.data.attributes.territorySchedules[0].territories).toEqual(['USA']);
+            expect(eventBody.data.attributes.territorySchedules[0].territories).toStrictEqual([
+                'USA',
+            ]);
         });
 
         test('should default deepLink to empty string when not provided', async () => {
@@ -295,16 +290,18 @@ describe('AppleAppStoreAdapter', () => {
             fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
 
             // Then — the deepLink defaults to an empty string
-            await adapter.create(makeBroadcast({ deepLink: undefined }));
+            const broadcast = makeBroadcast();
+            delete broadcast.deepLink;
+            await adapter.create(broadcast);
 
-            const eventBody = JSON.parse(fetchSpy.mock.calls[0][1].body);
+            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
             expect(eventBody.data.attributes.deepLink).toBe('');
         });
 
         test('should throw AppleAppStoreError on API failure', async () => {
             // Given — an API that returns 403
             fetchSpy.mockResolvedValueOnce(
-                mockResponse(403, null, false, '{"errors":[{"detail":"Forbidden"}]}'),
+                mockResponse(403, null, '{"errors":[{"detail":"Forbidden"}]}'),
             );
 
             // Then — an AppleAppStoreError is thrown with the correct status code
@@ -313,7 +310,7 @@ describe('AppleAppStoreAdapter', () => {
                 .catch((error: unknown) => error);
 
             expect(caughtError).toBeInstanceOf(AppleAppStoreError);
-            expect((caughtError as AppleAppStoreError).statusCode).toBe(403);
+            expect(caughtError).toMatchObject({ statusCode: 403 });
         });
     });
 
@@ -359,54 +356,51 @@ describe('AppleAppStoreAdapter', () => {
 
             expect(results).toHaveLength(3);
 
-            expect(results[0].id).toBe('event-1');
-            expect(results[0].status).toBe('published');
+            expect(results[0]?.id).toBe('event-1');
+            expect(results[0]?.status).toBe('published');
 
-            expect(results[1].id).toBe('event-2');
-            expect(results[1].status).toBe('created');
+            expect(results[1]?.id).toBe('event-2');
+            expect(results[1]?.status).toBe('created');
 
-            expect(results[2].id).toBe('event-3');
-            expect(results[2].status).toBe('submitted');
+            expect(results[2]?.id).toBe('event-3');
+            expect(results[2]?.status).toBe('submitted');
 
             // Verify URL includes the app ID
-            const [url] = fetchSpy.mock.calls[0];
+            const [url] = fetchSpy.mock.calls[0] ?? [];
             expect(url).toBe(`${BASE_URL}/apps/6444444444/appEvents`);
         });
 
-        test('should map all Apple event states correctly', async () => {
-            // Given — all possible Apple event states
-            const states = [
-                ['DRAFT', 'created'],
-                ['WAITING_FOR_REVIEW', 'submitted'],
-                ['APPROVED', 'approved'],
-                ['ACCEPTED', 'approved'],
-                ['PUBLISHED', 'published'],
-                ['PAST', 'published'],
-                ['REJECTED', 'rejected'],
-                ['UNKNOWN_STATE', 'created'], // Fallback
-            ] as const;
-
-            for (const [appleState, expectedStatus] of states) {
-                fetchSpy.mockResolvedValueOnce(
-                    mockResponse(200, {
-                        data: [
-                            {
-                                attributes: {
-                                    badge: 'SPECIAL_EVENT',
-                                    eventState: appleState,
-                                    referenceName: 'Test',
-                                },
-                                id: 'e-1',
-                                type: 'appEvents',
+        /* The last row is the fallback: a state the port does not know reads as `created`. */
+        test.each([
+            ['DRAFT', 'created'],
+            ['WAITING_FOR_REVIEW', 'submitted'],
+            ['APPROVED', 'approved'],
+            ['ACCEPTED', 'approved'],
+            ['PUBLISHED', 'published'],
+            ['PAST', 'published'],
+            ['REJECTED', 'rejected'],
+            ['UNKNOWN_STATE', 'created'],
+        ] as const)('should read the %s event state as %s', async (appleState, expectedStatus) => {
+            // Given — a listing that carries one event in that state
+            fetchSpy.mockResolvedValueOnce(
+                mockResponse(200, {
+                    data: [
+                        {
+                            attributes: {
+                                badge: 'SPECIAL_EVENT',
+                                eventState: appleState,
+                                referenceName: 'Test',
                             },
-                        ],
-                    }),
-                );
+                            id: 'e-1',
+                            type: 'appEvents',
+                        },
+                    ],
+                }),
+            );
 
-                // Then — each state is mapped to the expected status
-                const results = await adapter.list();
-                expect(results[0].status).toBe(expectedStatus);
-            }
+            // Then — the state reaches the port as the status it means
+            const results = await adapter.list();
+            expect(results[0]?.status).toBe(expectedStatus);
         });
 
         test('should return empty array when no events exist', async () => {
@@ -441,7 +435,7 @@ describe('AppleAppStoreAdapter', () => {
             expect(result.id).toBe('event-123');
             expect(result.provider).toBe('apple-app-store');
 
-            const [url, options] = fetchSpy.mock.calls[0];
+            const [url, options] = fetchSpy.mock.calls[0] ?? [];
             expect(url).toBe(`${BASE_URL}/appEvents/event-123`);
             expect(options.method).toBe('PATCH');
 
@@ -467,8 +461,8 @@ describe('AppleAppStoreAdapter', () => {
             // Then — only the provided field is included in the request body
             await adapter.update('event-123', { audience: 'lapsed-users' });
 
-            const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
-            expect(body.data.attributes).toEqual({
+            const body = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
+            expect(body.data.attributes).toStrictEqual({
                 purpose: 'ATTRACT_LAPSED_USERS',
             });
         });
@@ -488,7 +482,7 @@ describe('AppleAppStoreAdapter', () => {
             // Then — the purchase requirement is mapped correctly
             await adapter.update('event-123', { requiresPurchase: true });
 
-            const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
+            const body = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
             expect(body.data.attributes.purchaseRequirement).toBe('IN_APP_PURCHASE');
         });
     });
@@ -496,12 +490,12 @@ describe('AppleAppStoreAdapter', () => {
     describe('delete', () => {
         test('should send a DELETE request', async () => {
             // Given — a mock response for a successful deletion
-            fetchSpy.mockResolvedValueOnce(mockResponse(204, null, true));
+            fetchSpy.mockResolvedValueOnce(mockResponse(204, null));
 
             // Then — a DELETE request is sent to the correct URL
             await adapter.delete('event-123');
 
-            const [url, options] = fetchSpy.mock.calls[0];
+            const [url, options] = fetchSpy.mock.calls[0] ?? [];
             expect(url).toBe(`${BASE_URL}/appEvents/event-123`);
             expect(options.method).toBe('DELETE');
         });
@@ -509,7 +503,7 @@ describe('AppleAppStoreAdapter', () => {
         test('should throw on API failure', async () => {
             // Given — an API that returns 404
             fetchSpy.mockResolvedValueOnce(
-                mockResponse(404, null, false, '{"errors":[{"detail":"Not found"}]}'),
+                mockResponse(404, null, '{"errors":[{"detail":"Not found"}]}'),
             );
 
             // Then — an AppleAppStoreError is thrown
@@ -521,36 +515,28 @@ describe('AppleAppStoreAdapter', () => {
         test('should include status code and response body in error', async () => {
             // Given — an API that returns 422 with error details
             const errorResponse = '{"errors":[{"detail":"Invalid request","code":"INVALID"}]}';
-            fetchSpy.mockResolvedValueOnce(mockResponse(422, null, false, errorResponse));
+            fetchSpy.mockResolvedValueOnce(mockResponse(422, null, errorResponse));
 
             // Then — the error contains the status code and response body
-            try {
-                await adapter.create(makeBroadcast());
-                expect.unreachable('Should have thrown');
-            } catch (error) {
-                expect(error).toBeInstanceOf(AppleAppStoreError);
-                expect((error as AppleAppStoreError).statusCode).toBe(422);
-                expect((error as AppleAppStoreError).responseBody).toBe(errorResponse);
-            }
+            const rejection: unknown = await adapter
+                .create(makeBroadcast())
+                .catch((error: unknown) => error);
+
+            expect(rejection).toBeInstanceOf(AppleAppStoreError);
+            expect(rejection).toMatchObject({ responseBody: errorResponse, statusCode: 422 });
         });
     });
 });
 
 // --- Helpers ---
 
-function mockResponse(
-    status: number,
-    body: unknown,
-    noContent = false,
-    textBody?: string,
-): Response {
+/** A real `Response`, so the adapter reads the object a `fetch` would have handed it. */
+function mockResponse(status: number, body: unknown, textBody?: string): Response {
     const ok = status >= 200 && status < 300;
-    return {
-        headers: new Headers({ 'Content-Type': 'application/json' }),
-        json: () => Promise.resolve(body),
-        ok,
+
+    return new Response(status === 204 ? null : (textBody ?? JSON.stringify(body)), {
+        headers: { 'Content-Type': 'application/json' },
         status,
         statusText: ok ? 'OK' : 'Error',
-        text: () => Promise.resolve(textBody ?? JSON.stringify(body)),
-    } as Response;
+    });
 }

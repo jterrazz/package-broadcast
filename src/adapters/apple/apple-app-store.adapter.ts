@@ -1,16 +1,17 @@
-import type {
-    Broadcast,
-    BroadcastAudience,
-    BroadcastBadge,
-    BroadcastProviderPort,
-    BroadcastResult,
+import {
+    type Broadcast,
+    type BroadcastAudience,
+    type BroadcastBadge,
+    type BroadcastProviderPort,
+    type BroadcastResult,
 } from '../../ports/broadcast.port.js';
-import { type AppleAuthConfig, createAppleJwt } from './apple-auth.js';
+import { AppleAppStoreError } from './apple-app-store.error.js';
+import { type AppleAuthConfig, createAppleJwt } from './apple-authentication.js';
 
-interface AppleAppStoreConfig extends AppleAuthConfig {
+type AppleAppStoreConfig = AppleAuthConfig & {
     /** The App Store Connect app ID (e.g. "6444444444") */
     appId: string;
-}
+};
 
 const BASE_URL = 'https://api.appstoreconnect.apple.com/v1';
 
@@ -38,12 +39,13 @@ class AppleAppStoreAdapter implements BroadcastProviderPort {
                     deepLink: broadcast.deepLink ?? '',
                     primaryLocale: 'en-US',
                     priority: broadcast.priority === 'high' ? 'HIGH' : 'NORMAL',
-                    purchaseRequirement: broadcast.requiresPurchase
-                        ? 'IN_APP_PURCHASE'
-                        : 'NO_COST_ASSOCIATED',
+                    purchaseRequirement:
+                        broadcast.requiresPurchase === true
+                            ? 'IN_APP_PURCHASE'
+                            : 'NO_COST_ASSOCIATED',
                     purpose: mapAudience(broadcast.audience),
                     referenceName: broadcast.title,
-                    territorySchedules: this.buildTerritorySchedules(broadcast),
+                    territorySchedules: buildTerritorySchedules(broadcast),
                 },
                 relationships: {
                     app: {
@@ -57,7 +59,7 @@ class AppleAppStoreAdapter implements BroadcastProviderPort {
             },
         };
 
-        const eventResponse = await this.request<AppleEventResponse>(
+        const eventResponse = await request<AppleEventResponse>(
             '/appEvents',
             'POST',
             token,
@@ -87,7 +89,7 @@ class AppleAppStoreAdapter implements BroadcastProviderPort {
             },
         };
 
-        const localizationResponse = await this.request<AppleLocalizationResponse>(
+        const localizationResponse = await request<AppleLocalizationResponse>(
             '/appEventLocalizations',
             'POST',
             token,
@@ -97,17 +99,12 @@ class AppleAppStoreAdapter implements BroadcastProviderPort {
         // Step 3: Upload images if provided
         const localizationId = localizationResponse.data.id;
 
-        if (broadcast.cardImageUrl) {
-            await this.uploadEventImage(
-                token,
-                localizationId,
-                broadcast.cardImageUrl,
-                'EVENT_CARD',
-            );
+        if (broadcast.cardImageUrl !== undefined && broadcast.cardImageUrl !== '') {
+            await uploadEventImage(token, localizationId, broadcast.cardImageUrl, 'EVENT_CARD');
         }
 
-        if (broadcast.detailImageUrl) {
-            await this.uploadEventImage(
+        if (broadcast.detailImageUrl !== undefined && broadcast.detailImageUrl !== '') {
+            await uploadEventImage(
                 token,
                 localizationId,
                 broadcast.detailImageUrl,
@@ -125,13 +122,13 @@ class AppleAppStoreAdapter implements BroadcastProviderPort {
 
     async delete(id: string): Promise<void> {
         const token = await createAppleJwt(this.config);
-        await this.request(`/appEvents/${id}`, 'DELETE', token);
+        await request(`/appEvents/${id}`, 'DELETE', token);
     }
 
     async list(): Promise<BroadcastResult[]> {
         const token = await createAppleJwt(this.config);
 
-        const response = await this.request<AppleListResponse>(
+        const response = await request<AppleListResponse>(
             `/apps/${this.config.appId}/appEvents`,
             'GET',
             token,
@@ -176,7 +173,7 @@ class AppleAppStoreAdapter implements BroadcastProviderPort {
             },
         };
 
-        const response = await this.request<AppleEventResponse>(
+        const response = await request<AppleEventResponse>(
             `/appEvents/${id}`,
             'PATCH',
             token,
@@ -190,145 +187,134 @@ class AppleAppStoreAdapter implements BroadcastProviderPort {
             status: mapAppleStatus(response.data.attributes.eventState),
         };
     }
-
-    private async uploadEventImage(
-        token: string,
-        localizationId: string,
-        imageUrl: string,
-        assetType: 'EVENT_CARD' | 'EVENT_DETAILS_PAGE',
-    ): Promise<void> {
-        // Download the image
-        const imageResponse = await fetch(imageUrl);
-        if (!imageResponse.ok) {
-            throw new Error(`Failed to download image from ${imageUrl}: ${imageResponse.status}`);
-        }
-
-        const imageBuffer = new Uint8Array(await imageResponse.arrayBuffer());
-        const contentType = imageResponse.headers.get('content-type') ?? 'image/png';
-        const extension =
-            contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg' : 'png';
-        const fileName = `event-card.${extension}`;
-
-        // Step 1: Reserve the screenshot slot
-        const reserveBody = {
-            data: {
-                attributes: {
-                    appEventAssetType: assetType,
-                    fileName,
-                    fileSize: imageBuffer.byteLength,
-                },
-                relationships: {
-                    appEventLocalization: {
-                        data: {
-                            id: localizationId,
-                            type: 'appEventLocalizations',
-                        },
-                    },
-                },
-                type: 'appEventScreenshots',
-            },
-        };
-
-        const reserveResponse = await this.request<AppleScreenshotResponse>(
-            '/appEventScreenshots',
-            'POST',
-            token,
-            reserveBody,
-        );
-
-        const screenshotId = reserveResponse.data.id;
-        const uploadOperations = reserveResponse.data.attributes.uploadOperations ?? [];
-
-        // Step 2: Upload image chunks
-        for (const operation of uploadOperations) {
-            const chunk = imageBuffer.slice(operation.offset, operation.offset + operation.length);
-
-            const headers: Record<string, string> = {};
-            for (const header of operation.requestHeaders ?? []) {
-                headers[header.name] = header.value;
-            }
-
-            const uploadResponse = await fetch(operation.url, {
-                body: chunk,
-                headers,
-                method: operation.method,
-            });
-
-            if (!uploadResponse.ok) {
-                throw new Error(
-                    `Failed to upload image chunk: ${uploadResponse.status} ${uploadResponse.statusText}`,
-                );
-            }
-        }
-
-        // Step 3: Commit the upload
-        await this.request(`/appEventScreenshots/${screenshotId}`, 'PATCH', token, {
-            data: {
-                attributes: {
-                    uploaded: true,
-                },
-                id: screenshotId,
-                type: 'appEventScreenshots',
-            },
-        });
-    }
-
-    private buildTerritorySchedules(broadcast: Broadcast): AppleTerritorySchedule[] {
-        // If no territories specified, use a single schedule for all
-        const territories = broadcast.territories ?? ['USA'];
-
-        return [
-            {
-                eventEnd: broadcast.endDate.toISOString(),
-                eventStart: broadcast.startDate.toISOString(),
-                publishStart: broadcast.startDate.toISOString(),
-                territories,
-            },
-        ];
-    }
-
-    private async request<T>(
-        path: string,
-        method: string,
-        token: string,
-        body?: unknown,
-    ): Promise<T> {
-        const response = await fetch(`${BASE_URL}${path}`, {
-            body: body ? JSON.stringify(body) : undefined,
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            method,
-        });
-
-        if (!response.ok) {
-            const errorBody = await response.text();
-            throw new AppleAppStoreError(
-                `App Store Connect API error: ${response.status} ${response.statusText}`,
-                response.status,
-                errorBody,
-            );
-        }
-
-        if (response.status === 204) {
-            return undefined as T;
-        }
-
-        return response.json() as Promise<T>;
-    }
 }
 
-class AppleAppStoreError extends Error {
-    readonly statusCode: number;
-    readonly responseBody: string;
-
-    constructor(message: string, statusCode: number, responseBody: string) {
-        super(message);
-        this.name = 'AppleAppStoreError';
-        this.statusCode = statusCode;
-        this.responseBody = responseBody;
+/** Downloads the artwork, reserves a screenshot slot, uploads it chunk by chunk, commits. */
+async function uploadEventImage(
+    token: string,
+    localizationId: string,
+    imageUrl: string,
+    assetType: 'EVENT_CARD' | 'EVENT_DETAILS_PAGE',
+): Promise<void> {
+    // Download the image
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+        throw new Error(`Failed to download image from ${imageUrl}: ${imageResponse.status}`);
     }
+
+    const imageBuffer = new Uint8Array(await imageResponse.arrayBuffer());
+    const contentType = imageResponse.headers.get('content-type') ?? 'image/png';
+    const extension = contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg' : 'png';
+    const fileName = `event-card.${extension}`;
+
+    // Step 1: Reserve the screenshot slot
+    const reserveBody = {
+        data: {
+            attributes: {
+                appEventAssetType: assetType,
+                fileName,
+                fileSize: imageBuffer.byteLength,
+            },
+            relationships: {
+                appEventLocalization: {
+                    data: {
+                        id: localizationId,
+                        type: 'appEventLocalizations',
+                    },
+                },
+            },
+            type: 'appEventScreenshots',
+        },
+    };
+
+    const reserveResponse = await request<AppleScreenshotResponse>(
+        '/appEventScreenshots',
+        'POST',
+        token,
+        reserveBody,
+    );
+
+    const screenshotId = reserveResponse.data.id;
+    const uploadOperations = reserveResponse.data.attributes.uploadOperations ?? [];
+
+    // Step 2: Upload image chunks
+    for (const operation of uploadOperations) {
+        const chunk = imageBuffer.slice(operation.offset, operation.offset + operation.length);
+
+        const headers: Record<string, string> = {};
+        for (const header of operation.requestHeaders ?? []) {
+            headers[header.name] = header.value;
+        }
+
+        const uploadResponse = await fetch(operation.url, {
+            body: chunk,
+            headers,
+            method: operation.method,
+        });
+
+        if (!uploadResponse.ok) {
+            throw new Error(
+                `Failed to upload image chunk: ${uploadResponse.status} ${uploadResponse.statusText}`,
+            );
+        }
+    }
+
+    // Step 3: Commit the upload
+    await request(`/appEventScreenshots/${screenshotId}`, 'PATCH', token, {
+        data: {
+            attributes: {
+                uploaded: true,
+            },
+            id: screenshotId,
+            type: 'appEventScreenshots',
+        },
+    });
+}
+
+/** A broadcast that names no territory is scheduled for the United States alone. */
+function buildTerritorySchedules(broadcast: Broadcast): AppleTerritorySchedule[] {
+    const territories = broadcast.territories ?? ['USA'];
+
+    return [
+        {
+            eventEnd: broadcast.endDate.toISOString(),
+            eventStart: broadcast.startDate.toISOString(),
+            publishStart: broadcast.startDate.toISOString(),
+            territories,
+        },
+    ];
+}
+
+/** Every App Store Connect call goes through here: one bearer token, one error shape. */
+async function request<T>(path: string, method: string, token: string, body?: unknown): Promise<T> {
+    const init: RequestInit = {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        method,
+    };
+
+    if (body !== undefined) {
+        init.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(`${BASE_URL}${path}`, init);
+
+    if (!response.ok) {
+        const errorBody = await response.text();
+        throw new AppleAppStoreError(
+            `App Store Connect API error: ${response.status} ${response.statusText}`,
+            response.status,
+            errorBody,
+        );
+    }
+
+    if (response.status === 204) {
+        return undefined as T;
+    }
+
+    return (await response.json()) as T;
 }
 
 // --- Apple API type mappings ---
@@ -356,37 +342,37 @@ function mapBadge(badge: BroadcastBadge): string {
     return map[badge];
 }
 
-interface AppleTerritorySchedule {
+type AppleTerritorySchedule = {
     eventEnd: string;
     eventStart: string;
     publishStart: string;
     territories: string[];
-}
+};
 
-interface AppleLocalizationResponse {
+type AppleLocalizationResponse = {
     data: {
         id: string;
         type: string;
     };
-}
+};
 
-interface AppleScreenshotResponse {
+type AppleScreenshotResponse = {
     data: {
         attributes: {
-            uploadOperations?: Array<{
+            uploadOperations?: {
                 length: number;
                 method: string;
                 offset: number;
-                requestHeaders?: Array<{ name: string; value: string }>;
+                requestHeaders?: { name: string; value: string }[];
                 url: string;
-            }>;
+            }[];
         };
         id: string;
         type: string;
     };
-}
+};
 
-interface AppleEventResponse {
+type AppleEventResponse = {
     data: {
         attributes: {
             badge: string;
@@ -395,10 +381,10 @@ interface AppleEventResponse {
         id: string;
         type: string;
     };
-}
+};
 
-interface AppleListResponse {
-    data: Array<{
+type AppleListResponse = {
+    data: {
         attributes: {
             badge: string;
             eventState: string;
@@ -406,8 +392,8 @@ interface AppleListResponse {
         };
         id: string;
         type: string;
-    }>;
-}
+    }[];
+};
 
 function mapAppleStatus(eventState: string): BroadcastResult['status'] {
     const map: Record<string, BroadcastResult['status']> = {
@@ -422,4 +408,4 @@ function mapAppleStatus(eventState: string): BroadcastResult['status'] {
     return map[eventState] ?? 'created';
 }
 
-export { AppleAppStoreAdapter, type AppleAppStoreConfig, AppleAppStoreError };
+export { AppleAppStoreAdapter, type AppleAppStoreConfig };

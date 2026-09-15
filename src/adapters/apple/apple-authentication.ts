@@ -1,6 +1,6 @@
 import { importPKCS8, SignJWT } from 'jose';
 
-interface AppleAuthConfig {
+type AppleAuthConfig = {
     /** Issuer ID from App Store Connect (e.g. "57246542-96fe-1a63-e053-0824d011072a") */
     issuerId: string;
 
@@ -9,9 +9,10 @@ interface AppleAuthConfig {
 
     /** Private key content in PEM format (ES256 / P-256) */
     privateKey: string;
-}
+};
 
-const TOKEN_LIFETIME_SECONDS = 20 * 60; // 20 minutes (max allowed by Apple)
+/** 20 minutes — the longest lifetime App Store Connect accepts on a token. */
+const TOKEN_LIFETIME_SECONDS = 20 * 60;
 const AUDIENCE = 'appstoreconnect-v1';
 const ALGORITHM = 'ES256';
 
@@ -26,7 +27,7 @@ async function createAppleJwt(config: AppleAuthConfig): Promise<string> {
 
     const now = Math.floor(Date.now() / 1000);
 
-    return new SignJWT({})
+    return await new SignJWT({})
         .setProtectedHeader({ alg: ALGORITHM, kid: config.keyId, typ: 'JWT' })
         .setIssuer(config.issuerId)
         .setIssuedAt(now)

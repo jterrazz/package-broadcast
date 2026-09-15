@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest';
 
-import { createAppleJwt } from './apple-auth.js';
+import { createAppleJwt } from './apple-authentication.js';
 
-// Test ES256 private key (NOT a real key — generated for tests only)
-const TEST_PRIVATE_KEY = `-----BEGIN PRIVATE KEY-----
+// A sample ES256 private key, generated for this suite alone — it opens nothing.
+const SAMPLE_PRIVATE_KEY = `-----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2
 OF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r
 1RTwjmYSi9R/zpBnuQ4EiMnCqfMPWiZqB4QdbAd0E7oH50VpuZ1P087G
@@ -15,11 +15,11 @@ describe('createAppleJwt', () => {
         const token = await createAppleJwt({
             issuerId: 'test-issuer-id',
             keyId: 'TEST_KEY_1',
-            privateKey: TEST_PRIVATE_KEY,
+            privateKey: SAMPLE_PRIVATE_KEY,
         });
 
         // Then — the token is a 3-part JWT string
-        expect(typeof token).toBe('string');
+        expect(token).toBeTypeOf('string');
         expect(token.split('.')).toHaveLength(3);
     });
 
@@ -28,11 +28,11 @@ describe('createAppleJwt', () => {
         const token = await createAppleJwt({
             issuerId: 'test-issuer-id',
             keyId: 'MY_KEY_99',
-            privateKey: TEST_PRIVATE_KEY,
+            privateKey: SAMPLE_PRIVATE_KEY,
         });
 
         // Then — header contains algorithm, key ID, and type
-        const header = JSON.parse(Buffer.from(token.split('.')[0], 'base64url').toString());
+        const header = JSON.parse(Buffer.from(token.split('.')[0] ?? '', 'base64url').toString());
         expect(header.alg).toBe('ES256');
         expect(header.kid).toBe('MY_KEY_99');
         expect(header.typ).toBe('JWT');
@@ -43,11 +43,11 @@ describe('createAppleJwt', () => {
         const token = await createAppleJwt({
             issuerId: 'my-issuer-id',
             keyId: 'TEST_KEY_1',
-            privateKey: TEST_PRIVATE_KEY,
+            privateKey: SAMPLE_PRIVATE_KEY,
         });
 
         // Then — payload contains issuer, audience, and 20-minute expiry
-        const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+        const payload = JSON.parse(Buffer.from(token.split('.')[1] ?? '', 'base64url').toString());
         expect(payload.iss).toBe('my-issuer-id');
         expect(payload.aud).toBe('appstoreconnect-v1');
         expect(payload.exp - payload.iat).toBe(20 * 60);
@@ -61,6 +61,6 @@ describe('createAppleJwt', () => {
                 keyId: 'test',
                 privateKey: 'not-a-valid-key',
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('"pkcs8" must be PKCS#8 formatted string');
     });
 });

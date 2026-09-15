@@ -6,8 +6,8 @@ Two vitest suites, both run by `npm test` (`vitest --run`): unit tests beside th
 
 Each source file that carries logic has a `*.test.ts` sibling:
 
-- `src/adapters/apple/apple-auth.test.ts` proves `createAppleJwt` produces a three-part JWT with the header, issuer, audience and expiry App Store Connect requires, against a real (non-secret) ES256 test key committed in the file.
-- `src/adapters/apple/apple-app-store.adapter.test.ts` proves `AppleAppStoreAdapter`'s create/update/delete/list against a `vi.stubGlobal('fetch', …)` mock, one `describe` block per method, with `createAppleJwt` itself mocked out (`vi.mock('./apple-auth.js', …)`) so these tests do not depend on the auth suite passing.
+- `src/adapters/apple/apple-authentication.test.ts` proves `createAppleJwt` produces a three-part JWT with the header, issuer, audience and expiry App Store Connect requires, against a sample ES256 key committed in the file, which opens nothing.
+- `src/adapters/apple/apple-app-store.adapter.test.ts` proves `AppleAppStoreAdapter`'s create/update/delete/list against a `vi.stubGlobal('fetch', …)` mock, one `describe` block per method, with `createAppleJwt` itself mocked out (`vi.mock(import('./apple-authentication.js'), …)`) so these tests do not depend on the auth suite passing.
 - `src/send-broadcast.test.ts` proves the fan-out: every provider is called, a rejection becomes a `failed` result, and the result order matches the provider order.
 
 ## The integration test

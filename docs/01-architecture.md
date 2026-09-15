@@ -9,8 +9,9 @@ src/
 ├── send-broadcast.ts            # sendBroadcast(broadcast, providers) — the fan-out
 ├── adapters/
 │   └── apple/
-│       ├── apple-auth.ts        # createAppleJwt — ES256 JWT for App Store Connect
-│       └── apple-app-store.adapter.ts   # AppleAppStoreAdapter
+│       ├── apple-authentication.ts   # createAppleJwt — ES256 JWT for App Store Connect
+│       ├── apple-app-store.error.ts  # AppleAppStoreError — the status code and the body
+│       └── apple-app-store.adapter.ts # AppleAppStoreAdapter
 └── index.ts                     # the public barrel — every export above and nothing else
 ```
 
@@ -26,10 +27,11 @@ No adapter-specific type crosses this file. A provider translates the port's sha
 
 ## The adapters
 
-Today there is one channel, `apple/`, split into two files on purpose:
+Today there is one channel, `apple/`, split into three files on purpose:
 
-- `apple-auth.ts` (`src/adapters/apple/apple-auth.ts:24`) owns nothing but the ES256 JWT App Store Connect requires on every call — a 20-minute token, signed with `jose`. It knows nothing about broadcasts or events.
-- `apple-app-store.adapter.ts` (`src/adapters/apple/apple-app-store.adapter.ts:22`) is `AppleAppStoreAdapter`, the `BroadcastProviderPort` implementation. `create` is itself a small pipeline against the App Store Connect API — create the event, create its localization, then upload the card and detail images if their URLs were given — and `list`/`update`/`delete` each map the port's vocabulary onto Apple's (`mapBadge`, `mapAudience`, `mapAppleStatus`, private to the file). A failed HTTP call raises `AppleAppStoreError`, carrying the status code and the response body.
+- `apple-authentication.ts` (`src/adapters/apple/apple-authentication.ts:25`) owns nothing but the ES256 JWT App Store Connect requires on every call — a 20-minute token, signed with `jose`. It knows nothing about broadcasts or events.
+- `apple-app-store.error.ts` (`src/adapters/apple/apple-app-store.error.ts:6`) is `AppleAppStoreError` and nothing else — the failure a refused API call raises, carrying the status code and the raw response body so a rejection stays debuggable once it has left the adapter.
+- `apple-app-store.adapter.ts` (`src/adapters/apple/apple-app-store.adapter.ts:23`) is `AppleAppStoreAdapter`, the `BroadcastProviderPort` implementation. `create` is itself a small pipeline against the App Store Connect API — create the event, create its localization, then upload the card and detail images if their URLs were given — and `list`/`update`/`delete` each map the port's vocabulary onto Apple's (`mapBadge`, `mapAudience`, `mapAppleStatus`, private to the file). The class holds only what a provider's identity needs: `request`, `uploadEventImage` and `buildTerritorySchedules` read nothing off `this`, so they are module functions beside it.
 
 A second channel is added the same way: a new directory under `src/adapters/`, a class implementing `BroadcastProviderPort`, exported from `src/index.ts`. See [Channels](05-channels.md) for what is planned there today.
 

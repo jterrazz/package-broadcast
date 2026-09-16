@@ -1,4 +1,5 @@
-import { base, defineConfig, type OxfmtConfig } from '@jterrazz/typescript/oxfmt';
+import { base, defineConfig } from '@jterrazz/typescript/oxfmt';
+import type { OxfmtConfig } from '@jterrazz/typescript/oxfmt';
 
 const config: OxfmtConfig = defineConfig(base);
 

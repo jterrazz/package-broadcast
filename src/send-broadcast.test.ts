@@ -107,8 +107,7 @@ describe('sendBroadcast', () => {
         // Then — all results are failed
         const results = await sendBroadcast(makeBroadcast(), [fail1, fail2]);
 
-        expect(results).toHaveLength(2);
-        expect(results.every((r) => r.status === 'failed')).toBeTruthy();
+        expect(results.map((result) => result.status)).toStrictEqual(['failed', 'failed']);
     });
 
     test('should include error in raw field on failure', async () => {

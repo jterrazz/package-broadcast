@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { type Broadcast } from '../../ports/broadcast.port.js';
+import type { Broadcast } from '../../ports/broadcast.port.js';
 import { AppleAppStoreAdapter } from './apple-app-store.adapter.js';
 import { AppleAppStoreError } from './apple-app-store.error.js';
 

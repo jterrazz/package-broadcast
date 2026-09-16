@@ -1,11 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import {
-    AppleAppStoreAdapter,
-    type Broadcast,
-    type BroadcastProviderPort,
-    sendBroadcast,
-} from '../../src/index.js';
+import { AppleAppStoreAdapter, sendBroadcast } from '../../src/index.js';
+import type { Broadcast, BroadcastProviderPort } from '../../src/index.js';
 
 // Mock the JWT generation to avoid needing a real private key
 vi.mock(import('../../src/adapters/apple/apple-authentication.js'), () => ({

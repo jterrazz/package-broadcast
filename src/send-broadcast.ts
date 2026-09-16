@@ -1,8 +1,4 @@
-import {
-    type Broadcast,
-    type BroadcastProviderPort,
-    type BroadcastResult,
-} from './ports/broadcast.port.js';
+import type { Broadcast, BroadcastProviderPort, BroadcastResult } from './ports/broadcast.port.js';
 
 /**
  * Send a broadcast to one or more providers concurrently.

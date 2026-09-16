@@ -1,10 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 
-import {
-    type Broadcast,
-    type BroadcastProviderPort,
-    type BroadcastResult,
-} from './ports/broadcast.port.js';
+import type { Broadcast, BroadcastProviderPort, BroadcastResult } from './ports/broadcast.port.js';
 import { sendBroadcast } from './send-broadcast.js';
 
 const makeBroadcast = (overrides?: Partial<Broadcast>): Broadcast => ({

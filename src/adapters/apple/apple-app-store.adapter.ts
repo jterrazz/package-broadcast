@@ -1,12 +1,13 @@
-import {
-    type Broadcast,
-    type BroadcastAudience,
-    type BroadcastBadge,
-    type BroadcastProviderPort,
-    type BroadcastResult,
+import type {
+    Broadcast,
+    BroadcastAudience,
+    BroadcastBadge,
+    BroadcastProviderPort,
+    BroadcastResult,
 } from '../../ports/broadcast.port.js';
 import { AppleAppStoreError } from './apple-app-store.error.js';
-import { type AppleAuthConfig, createAppleJwt } from './apple-authentication.js';
+import { createAppleJwt } from './apple-authentication.js';
+import type { AppleAuthConfig } from './apple-authentication.js';
 
 type AppleAppStoreConfig = AppleAuthConfig & {
     /** The App Store Connect app ID (e.g. "6444444444") */

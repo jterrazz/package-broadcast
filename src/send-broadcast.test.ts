@@ -30,11 +30,11 @@ const makeProvider = (name: string, result?: Partial<BroadcastResult>): Broadcas
 
 describe('sendBroadcast', () => {
     test('should send to a single provider', async () => {
-        // Given — a single provider and a broadcast
+        // Given - a single provider and a broadcast
         const provider = makeProvider('test-provider');
         const broadcast = makeBroadcast();
 
-        // Then — the broadcast is sent and result matches the provider
+        // Then - the broadcast is sent and result matches the provider
         const results = await sendBroadcast(broadcast, [provider]);
 
         expect(results).toHaveLength(1);
@@ -44,12 +44,12 @@ describe('sendBroadcast', () => {
     });
 
     test('should send to multiple providers concurrently', async () => {
-        // Given — two providers with different names
+        // Given - two providers with different names
         const provider1 = makeProvider('apple', { id: 'apple-1' });
         const provider2 = makeProvider('google', { id: 'google-1' });
         const broadcast = makeBroadcast();
 
-        // Then — both providers receive the broadcast
+        // Then - both providers receive the broadcast
         const results = await sendBroadcast(broadcast, [provider1, provider2]);
 
         expect(results).toHaveLength(2);
@@ -58,7 +58,7 @@ describe('sendBroadcast', () => {
     });
 
     test('should handle provider failures gracefully', async () => {
-        // Given — one working provider and one that rejects
+        // Given - one working provider and one that rejects
         const successProvider = makeProvider('apple');
         const failProvider: BroadcastProviderPort = {
             create: vi.fn().mockRejectedValue(new Error('API down')),
@@ -68,7 +68,7 @@ describe('sendBroadcast', () => {
             update: vi.fn(),
         };
 
-        // Then — the failed provider returns a "failed" status
+        // Then - the failed provider returns a "failed" status
         const results = await sendBroadcast(makeBroadcast(), [successProvider, failProvider]);
 
         expect(results).toHaveLength(2);
@@ -78,17 +78,17 @@ describe('sendBroadcast', () => {
     });
 
     test('should return empty array for empty providers', async () => {
-        // Given — no providers
+        // Given - no providers
         const broadcast = makeBroadcast();
 
-        // Then — empty results
+        // Then - empty results
         const results = await sendBroadcast(broadcast, []);
 
         expect(results).toHaveLength(0);
     });
 
     test('should handle all providers failing', async () => {
-        // Given — two failing providers
+        // Given - two failing providers
         const fail1: BroadcastProviderPort = {
             create: vi.fn().mockRejectedValue(new Error('Error 1')),
             delete: vi.fn(),
@@ -104,14 +104,14 @@ describe('sendBroadcast', () => {
             update: vi.fn(),
         };
 
-        // Then — all results are failed
+        // Then - all results are failed
         const results = await sendBroadcast(makeBroadcast(), [fail1, fail2]);
 
         expect(results.map((result) => result.status)).toStrictEqual(['failed', 'failed']);
     });
 
     test('should include error in raw field on failure', async () => {
-        // Given — a provider that throws with a message
+        // Given - a provider that throws with a message
         const failProvider: BroadcastProviderPort = {
             create: vi.fn().mockRejectedValue(new Error('Network timeout')),
             delete: vi.fn(),
@@ -120,7 +120,7 @@ describe('sendBroadcast', () => {
             update: vi.fn(),
         };
 
-        // Then — raw field contains the error
+        // Then - raw field contains the error
         const results = await sendBroadcast(makeBroadcast(), [failProvider]);
 
         expect(results[0]?.raw).toBeInstanceOf(Error);

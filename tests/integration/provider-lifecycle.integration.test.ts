@@ -66,7 +66,7 @@ describe('provider lifecycle', () => {
     });
 
     test('creates and lists an event', async () => {
-        // Given — mock responses for create (event + localization) and list
+        // Given - mock responses for create (event + localization) and list
         fetchSpy.mockResolvedValueOnce(
             mockResponse(201, {
                 data: {
@@ -104,7 +104,7 @@ describe('provider lifecycle', () => {
         const createResult = await adapter.create(makeBroadcast());
         const listResults = await adapter.list();
 
-        // Then — the created event appears in the list
+        // Then - the created event appears in the list
         expect(createResult.id).toBe('event-1');
         expect(createResult.status).toBe('created');
         expect(listResults).toHaveLength(1);
@@ -113,7 +113,7 @@ describe('provider lifecycle', () => {
     });
 
     test('creates, updates, then deletes an event', async () => {
-        // Given — mock responses for create, localization, update, and delete
+        // Given - mock responses for create, localization, update, and delete
         fetchSpy.mockResolvedValueOnce(
             mockResponse(201, {
                 data: {
@@ -143,7 +143,7 @@ describe('provider lifecycle', () => {
         const updateResult = await adapter.update(createResult.id, { priority: 'high' });
         await adapter.delete(createResult.id);
 
-        // Then — all three API calls were made with the correct HTTP methods
+        // Then - all three API calls were made with the correct HTTP methods
         // Create event, localization, update, delete.
         expect(fetchSpy).toHaveBeenCalledTimes(4);
         expect(fetchSpy.mock.calls[0]?.[1].method).toBe('POST');
@@ -159,7 +159,7 @@ describe('provider lifecycle', () => {
     });
 
     test('handles create failure then retries successfully', async () => {
-        // Given — first create returns 500, second create returns 201
+        // Given - first create returns 500, second create returns 201
         fetchSpy.mockResolvedValueOnce(
             mockResponse(500, null, '{"errors":[{"detail":"Internal Server Error"}]}'),
         );
@@ -181,7 +181,7 @@ describe('provider lifecycle', () => {
         const firstAttempt = await adapter.create(makeBroadcast()).catch((error: unknown) => error);
         const secondAttempt = await adapter.create(makeBroadcast());
 
-        // Then — the first attempt fails and the second succeeds
+        // Then - the first attempt fails and the second succeeds
         expect(firstAttempt).toBeInstanceOf(Error);
         expect(secondAttempt.id).toBe('event-1');
         expect(secondAttempt.status).toBe('created');
@@ -202,7 +202,7 @@ describe('multi-provider fan-out', () => {
     });
 
     test('sends to three providers with mixed results', async () => {
-        // Given — three mock providers: one succeeds, one fails, one succeeds
+        // Given - three mock providers: one succeeds, one fails, one succeeds
         const providerA: BroadcastProviderPort = {
             create: vi.fn().mockResolvedValue({ id: 'a-1', provider: 'alpha', status: 'created' }),
             delete: vi.fn(),
@@ -229,7 +229,7 @@ describe('multi-provider fan-out', () => {
 
         const results = await sendBroadcast(makeBroadcast(), [providerA, providerB, providerC]);
 
-        // Then — two succeed and one fails, all three providers were called
+        // Then - two succeed and one fails, all three providers were called
         const created = results.filter((r) => r.status === 'created');
         const failed = results.filter((r) => r.status === 'failed');
 
@@ -243,12 +243,12 @@ describe('multi-provider fan-out', () => {
     });
 
     test('preserves provider order in results', async () => {
-        // Given — three providers named alpha, beta, gamma
+        // Given - three providers named alpha, beta, gamma
         const providers = [makeProvider('alpha'), makeProvider('beta'), makeProvider('gamma')];
 
         const results = await sendBroadcast(makeBroadcast(), providers);
 
-        // Then — results array preserves the same order as the input providers
+        // Then - results array preserves the same order as the input providers
         expect(results).toHaveLength(3);
         expect(results[0]?.provider).toBe('alpha');
         expect(results[1]?.provider).toBe('beta');

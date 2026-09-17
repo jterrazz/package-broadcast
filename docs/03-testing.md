@@ -23,6 +23,15 @@ Each source file that carries logic has a `*.test.ts` sibling:
 | The fan-out (`sendBroadcast`)                        | `src/send-broadcast.test.ts`                                                                          |
 | Apple's request pipeline (create/update/delete/list) | `apple-app-store.adapter.test.ts` and the integration suite                                           |
 
+## The conventions the lint enforces
+
+`oxlint.config.ts` composes `@jterrazz/test`'s `testing` fragment (see [Developing](02-developing.md)), so the suites are judged, not only run. Two rules bind every test here: each body narrates itself with a `// Given -` comment and a `// Then -` comment, in that order (B4 — the marker is a hyphen, not a dash), and the vitest rules cap assertion count and demand typed mocks.
+
+Two of the fragment's structural rules are recorded in `oxlint.baseline.json` rather than satisfied, because paying them is a design decision this package has not taken:
+
+- `i2-sibling-test-naming` bans a root `tests/` directory — the integration suite above lives there, and moving it means deciding whether it is a sibling unit test or a product specification.
+- `i4-no-vi-mock-in-src` bans `vi.mock` under `src/` — the adapter suite mocks `createAppleJwt` that way, and removing it means injecting the signer through `AppleAppStoreAdapter`'s constructor, a breaking change to a published API.
+
 ## Running it
 
 ```bash

@@ -1,5 +1,7 @@
 {
     "eslint/no-await-in-loop": 1,
+    "jterrazz/i2-sibling-test-naming": 1,
+    "jterrazz/i4-no-vi-mock-in-src": 1,
     "typescript/no-unsafe-argument": 13,
     "typescript/no-unsafe-assignment": 22,
     "typescript/no-unsafe-member-access": 62,

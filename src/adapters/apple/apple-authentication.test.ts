@@ -1,13 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
+import { SAMPLE_PRIVATE_KEY } from './apple-authentication.fixtures.js';
 import { createAppleJwt } from './apple-authentication.js';
-
-// A sample ES256 private key, generated for this suite alone — it opens nothing.
-const SAMPLE_PRIVATE_KEY = `-----BEGIN PRIVATE KEY-----
-MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2
-OF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r
-1RTwjmYSi9R/zpBnuQ4EiMnCqfMPWiZqB4QdbAd0E7oH50VpuZ1P087G
------END PRIVATE KEY-----`;
 
 describe('createAppleJwt', () => {
     test('generates a valid JWT with correct structure', async () => {

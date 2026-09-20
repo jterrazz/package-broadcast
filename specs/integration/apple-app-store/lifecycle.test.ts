@@ -1,19 +1,20 @@
-import { expect, test, vi } from 'vitest';
+import { expect, test } from 'vitest';
 
+import { SAMPLE_PRIVATE_KEY } from '../../../src/adapters/apple/apple-authentication.fixtures.js';
 import { AppleAppStoreAdapter } from '../../../src/index.js';
 import type { Broadcast } from '../../../src/index.js';
 import { integration } from '../integration.specification.js';
-
-// Mock the JWT generation to avoid needing a real private key
-vi.mock(import('../../../src/adapters/apple/apple-authentication.js'), () => ({
-    createAppleJwt: vi.fn().mockResolvedValue('mock-jwt-token'),
-}));
+import {
+    withFirstAttemptRefused,
+    withListing,
+    withUpdateAndDelete,
+} from './contracts/app-store.contracts.js';
 
 const TEST_CONFIG = {
     appId: '6444444444',
     issuerId: 'test-issuer',
     keyId: 'TEST_KEY',
-    privateKey: 'not-used-because-mocked',
+    privateKey: SAMPLE_PRIVATE_KEY,
 };
 
 const makeBroadcast = (overrides?: Partial<Broadcast>): Broadcast => ({
@@ -29,56 +30,9 @@ const makeBroadcast = (overrides?: Partial<Broadcast>): Broadcast => ({
     ...overrides,
 });
 
-/** A real `Response`, so the adapter reads the object a `fetch` would have handed it. */
-function mockResponse(status: number, body: unknown, textBody?: string): Response {
-    const ok = status >= 200 && status < 300;
-
-    return new Response(status === 204 ? null : (textBody ?? JSON.stringify(body)), {
-        headers: { 'Content-Type': 'application/json' },
-        status,
-        statusText: ok ? 'OK' : 'Error',
-    });
-}
-
 test('creates and lists an event', async () => {
-    // Given - an App Store Connect that accepts the event, its localization, then a listing
-    const fetchSpy = vi.fn();
-    vi.stubGlobal('fetch', fetchSpy);
-    fetchSpy.mockResolvedValueOnce(
-        mockResponse(201, {
-            data: {
-                attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                id: 'event-1',
-                type: 'appEvents',
-            },
-        }),
-    );
-    fetchSpy.mockResolvedValueOnce(
-        mockResponse(201, {
-            data: {
-                attributes: { locale: 'en-US', name: 'Spring Event' },
-                id: 'loc-1',
-                type: 'appEventLocalizations',
-            },
-        }),
-    );
-    fetchSpy.mockResolvedValueOnce(
-        mockResponse(200, {
-            data: [
-                {
-                    attributes: {
-                        badge: 'SPECIAL_EVENT',
-                        eventState: 'DRAFT',
-                        referenceName: 'Spring Event',
-                    },
-                    id: 'event-1',
-                    type: 'appEvents',
-                },
-            ],
-        }),
-    );
-
-    const result = await integration.call(async () => {
+    // Given - an App Store Connect that takes the event, its localization, then lists it
+    const result = await integration.intercept(withListing).call(async () => {
         const adapter = new AppleAppStoreAdapter(TEST_CONFIG);
 
         return {
@@ -91,41 +45,14 @@ test('creates and lists an event', async () => {
     const { created, listed } = result.value.value;
     expect(created.id).toBe('event-1');
     expect(created.status).toBe('created');
-    expect(listed).toHaveLength(1);
-    expect(listed[0]?.id).toBe('event-1');
-    expect(listed[0]?.status).toBe('created');
+    expect(listed.map(({ id, status }) => ({ id, status }))).toStrictEqual([
+        { id: 'event-1', status: 'created' },
+    ]);
 });
 
 test('creates, updates, then deletes an event', async () => {
-    // Given - an App Store Connect that accepts create, localization, update and delete
-    const fetchSpy = vi.fn();
-    vi.stubGlobal('fetch', fetchSpy);
-    fetchSpy.mockResolvedValueOnce(
-        mockResponse(201, {
-            data: {
-                attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                id: 'event-1',
-                type: 'appEvents',
-            },
-        }),
-    );
-    fetchSpy.mockResolvedValueOnce(
-        mockResponse(201, {
-            data: { id: 'loc-1', type: 'appEventLocalizations' },
-        }),
-    );
-    fetchSpy.mockResolvedValueOnce(
-        mockResponse(200, {
-            data: {
-                attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                id: 'event-1',
-                type: 'appEvents',
-            },
-        }),
-    );
-    fetchSpy.mockResolvedValueOnce(mockResponse(204, null));
-
-    const result = await integration.call(async () => {
+    // Given - an App Store Connect that takes create, localization, patch and delete
+    const result = await integration.intercept(withUpdateAndDelete).call(async () => {
         const adapter = new AppleAppStoreAdapter(TEST_CONFIG);
         const created = await adapter.create(makeBroadcast());
         const updated = await adapter.update(created.id, { priority: 'high' });
@@ -134,53 +61,25 @@ test('creates, updates, then deletes an event', async () => {
         return { created, updated };
     });
 
-    // Then - the pipeline ran in order: create event, localization, update, delete
-    expect(fetchSpy).toHaveBeenCalledTimes(4);
-    expect(fetchSpy.mock.calls[0]?.[1].method).toBe('POST');
-    expect(fetchSpy.mock.calls[1]?.[1].method).toBe('POST');
-    expect(fetchSpy.mock.calls[2]?.[1].method).toBe('PATCH');
-    expect(fetchSpy.mock.calls[3]?.[1].method).toBe('DELETE');
-
+    // Then - every declared call was made, on the event the create named
     const { created, updated } = result.value.value;
     expect(created.id).toBe('event-1');
     expect(updated.id).toBe('event-1');
-
-    const updateBody = JSON.parse(fetchSpy.mock.calls[2]?.[1].body);
-    expect(updateBody.data.attributes.priority).toBe('HIGH');
 });
 
 test('handles create failure then retries successfully', async () => {
-    // Given - an App Store Connect that refuses the first event and accepts the second
-    const fetchSpy = vi.fn();
-    vi.stubGlobal('fetch', fetchSpy);
-    fetchSpy.mockResolvedValueOnce(
-        mockResponse(500, null, '{"errors":[{"detail":"Internal Server Error"}]}'),
-    );
-    fetchSpy.mockResolvedValueOnce(
-        mockResponse(201, {
-            data: {
-                attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                id: 'event-1',
-                type: 'appEvents',
-            },
-        }),
-    );
-    fetchSpy.mockResolvedValueOnce(
-        mockResponse(201, {
-            data: { id: 'loc-1', type: 'appEventLocalizations' },
-        }),
-    );
+    // Given - an App Store Connect that fails the first event and accepts the second
+    const result = await integration.intercept(withFirstAttemptRefused).call(async () => {
+        const adapter = new AppleAppStoreAdapter(TEST_CONFIG);
+        const refusal = await adapter.create(makeBroadcast()).catch(String);
 
-    const refused = await integration.call(
-        async () => await new AppleAppStoreAdapter(TEST_CONFIG).create(makeBroadcast()),
-    );
-    const retried = await integration.call(
-        async () => await new AppleAppStoreAdapter(TEST_CONFIG).create(makeBroadcast()),
-    );
+        return { refusal, retried: await adapter.create(makeBroadcast()) };
+    });
 
     // Then - the first attempt was refused and the retry went through
-    expect(refused.error.text).toBe('App Store Connect API error: 500 Error');
-    expect(retried.value.value.id).toBe('event-1');
-    expect(retried.value.value.status).toBe('created');
-    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    const { refusal, retried } = result.value.value;
+    expect(refusal).toBe(
+        'AppleAppStoreError: App Store Connect API error: 500 Internal Server Error',
+    );
+    expect(retried).toMatchObject({ id: 'event-1', status: 'created' });
 });

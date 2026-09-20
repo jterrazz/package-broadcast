@@ -8,7 +8,7 @@ How a change to this package is made: the toolchain it wires, the commands the M
 npm install
 ```
 
-No build step is needed to run the tests or the lint — they read `src/` directly. `npm run build` (`typescript bundle`) is only needed to produce the `dist/` this package publishes.
+No build step is needed to run the tests — they read `src/` directly. The lint is different: `npm run lint`'s Publish (packaging) pass reads `dist/` through the `exports` map, so on a fresh checkout `npm run build` runs before `npm run lint` or the pass fails on files that do not exist yet, not on anything the change itself broke.
 
 ## The toolchain
 
@@ -25,7 +25,7 @@ The toolchain is two devDependencies. `@jterrazz/typescript` carries the profile
 | `npm run lint:fix` | `typescript fix`                                             |
 | `npm run build`    | `typescript bundle` — ESM + CJS + types to `dist/`           |
 
-The `Makefile` wraps the same three behind `make install` / `make build` / `make lint` / `make test`, each depending on a `node_modules/.install` sentinel keyed off `package-lock.json` so a stale install is never silently reused.
+The `Makefile` wraps the same three behind `make install` / `make build` / `make lint` / `make test`, each depending on a `node_modules/.install` sentinel keyed off `package-lock.json` so a stale install is never silently reused. `make lint` does not itself depend on `make build` — run `make build` first on a fresh checkout, or `make lint`'s Publish (packaging) pass fails on a `dist/` that was never produced.
 
 Build, test and lint artefacts live under `.artifacts/<tool>/`, per the toolchain's own convention — nothing this package's own tooling writes should land anywhere else.
 

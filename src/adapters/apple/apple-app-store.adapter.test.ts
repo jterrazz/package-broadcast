@@ -1,13 +1,11 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { defineContracts, http, intercept } from '@jterrazz/test';
+import type { InterceptScope } from '@jterrazz/test';
+import { describe, expect, test } from 'vitest';
 
 import type { Broadcast } from '../../ports/broadcast.port.js';
 import { AppleAppStoreAdapter } from './apple-app-store.adapter.js';
 import { AppleAppStoreError } from './apple-app-store.error.js';
-
-// Mock the JWT generation to avoid needing a real private key
-vi.mock(import('./apple-authentication.js'), () => ({
-    createAppleJwt: vi.fn().mockResolvedValue('mock-jwt-token'),
-}));
+import { SAMPLE_PRIVATE_KEY } from './apple-authentication.fixtures.js';
 
 const BASE_URL = 'https://api.appstoreconnect.apple.com/v1';
 
@@ -15,8 +13,10 @@ const TEST_CONFIG = {
     appId: '6444444444',
     issuerId: 'test-issuer',
     keyId: 'TEST_KEY',
-    privateKey: 'not-used-because-mocked',
+    privateKey: SAMPLE_PRIVATE_KEY,
 };
+
+const adapter = new AppleAppStoreAdapter(TEST_CONFIG);
 
 const makeBroadcast = (overrides?: Partial<Broadcast>): Broadcast => ({
     audience: 'all',
@@ -31,124 +31,135 @@ const makeBroadcast = (overrides?: Partial<Broadcast>): Broadcast => ({
     ...overrides,
 });
 
+/** The event Apple answers a create with, in the shape the adapter reads. */
+const CREATED_EVENT = {
+    data: {
+        attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
+        id: 'event-123',
+        type: 'appEvents',
+    },
+};
+
+/** The localization Apple answers with, once the event exists. */
+const CREATED_LOCALIZATION = { data: { id: 'loc-456', type: 'appEventLocalizations' } };
+
+/**
+ * Apple accepting an event and its localization — the two calls every create
+ * makes. The filter is the assertion: a request the declared event does not
+ * describe matches nothing, and an unmatched call fails the block.
+ */
+async function appleAcceptsCreate(event?: object): Promise<InterceptScope> {
+    return await intercept(
+        defineContracts(
+            {
+                request: http.post(
+                    `${BASE_URL}/appEvents`,
+                    event === undefined ? {} : { body: event },
+                ),
+                response: http.json(CREATED_EVENT, { status: 201 }),
+            },
+            {
+                request: http.post(`${BASE_URL}/appEventLocalizations`),
+                response: http.json(CREATED_LOCALIZATION, { status: 201 }),
+            },
+        ),
+    );
+}
+
 describe('appleAppStoreAdapter', () => {
-    let adapter: AppleAppStoreAdapter;
-    let fetchSpy: ReturnType<typeof vi.fn>;
-
-    beforeEach(() => {
-        adapter = new AppleAppStoreAdapter(TEST_CONFIG);
-        fetchSpy = vi.fn();
-        vi.stubGlobal('fetch', fetchSpy);
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
     describe('create', () => {
         test('should create an event and its localization', async () => {
-            // Given - mock responses for event creation and localization
-            // First call: create event
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(201, {
-                    data: {
-                        attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                        id: 'event-123',
-                        type: 'appEvents',
+            // Given - an Apple that accepts exactly the event and localization this broadcast describes
+            await using _ = await intercept(
+                defineContracts(
+                    {
+                        request: http.post(`${BASE_URL}/appEvents`, {
+                            body: {
+                                data: {
+                                    attributes: {
+                                        badge: 'SPECIAL_EVENT',
+                                        deepLink: 'signews://events/spring-2026',
+                                        primaryLocale: 'en-US',
+                                        priority: 'NORMAL',
+                                        purchaseRequirement: 'NO_COST_ASSOCIATED',
+                                        purpose: 'APPROPRIATE_FOR_ALL_USERS',
+                                        referenceName: 'Spring Event',
+                                    },
+                                    relationships: { app: { data: { id: '6444444444' } } },
+                                    type: 'appEvents',
+                                },
+                            },
+                        }),
+                        response: http.json(CREATED_EVENT, { status: 201 }),
                     },
-                }),
+                    {
+                        request: http.post(`${BASE_URL}/appEventLocalizations`, {
+                            body: {
+                                data: {
+                                    attributes: {
+                                        locale: 'en-US',
+                                        longDescription:
+                                            'Join us for a special live event with exclusive content and prizes.',
+                                        name: 'Spring Event',
+                                        shortDescription: 'Live event this weekend!',
+                                    },
+                                    relationships: { appEvent: { data: { id: 'event-123' } } },
+                                    type: 'appEventLocalizations',
+                                },
+                            },
+                        }),
+                        response: http.json(CREATED_LOCALIZATION, { status: 201 }),
+                    },
+                ),
             );
 
-            // Second call: create localization
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(201, {
-                    data: {
-                        attributes: { locale: 'en-US', name: 'Spring Event' },
-                        id: 'loc-456',
-                        type: 'appEventLocalizations',
-                    },
-                }),
-            );
-
-            // Then - the event and localization are created with correct data
+            // Then - the localization carried the id the event creation answered with
             const result = await adapter.create(makeBroadcast());
 
-            expect(result.id).toBe('event-123');
-            expect(result.provider).toBe('apple-app-store');
-            expect(result.status).toBe('created');
-
-            // Verify event creation request
-            expect(fetchSpy).toHaveBeenCalledTimes(2);
-
-            const [eventUrl, eventOptions] = fetchSpy.mock.calls[0] ?? [];
-            expect(eventUrl).toBe(`${BASE_URL}/appEvents`);
-            expect(eventOptions.method).toBe('POST');
-
-            const eventBody = JSON.parse(eventOptions.body);
-            expect(eventBody.data.type).toBe('appEvents');
-            expect(eventBody.data.attributes.referenceName).toBe('Spring Event');
-            expect(eventBody.data.attributes.badge).toBe('SPECIAL_EVENT');
-            expect(eventBody.data.attributes.priority).toBe('NORMAL');
-            expect(eventBody.data.attributes.purchaseRequirement).toBe('NO_COST_ASSOCIATED');
-            expect(eventBody.data.attributes.purpose).toBe('APPROPRIATE_FOR_ALL_USERS');
-            expect(eventBody.data.attributes.deepLink).toBe('signews://events/spring-2026');
-            expect(eventBody.data.attributes.primaryLocale).toBe('en-US');
-            expect(eventBody.data.relationships.app.data.id).toBe('6444444444');
-
-            // Verify localization request
-            const [locUrl, locOptions] = fetchSpy.mock.calls[1] ?? [];
-            expect(locUrl).toBe(`${BASE_URL}/appEventLocalizations`);
-            expect(locOptions.method).toBe('POST');
-
-            const locBody = JSON.parse(locOptions.body);
-            expect(locBody.data.type).toBe('appEventLocalizations');
-            expect(locBody.data.attributes.name).toBe('Spring Event');
-            expect(locBody.data.attributes.shortDescription).toBe('Live event this weekend!');
-            expect(locBody.data.attributes.longDescription).toBe(
-                'Join us for a special live event with exclusive content and prizes.',
-            );
-            expect(locBody.data.relationships.appEvent.data.id).toBe('event-123');
+            expect(result).toStrictEqual({
+                id: 'event-123',
+                provider: 'apple-app-store',
+                raw: CREATED_EVENT,
+                status: 'created',
+            });
         });
 
         test('should send authorization header with JWT', async () => {
-            // Given - mock responses for a successful creation
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(201, {
-                    data: {
-                        attributes: { badge: 'CHALLENGE', eventState: 'DRAFT' },
-                        id: 'e-1',
-                        type: 'appEvents',
+            // Given - an Apple that answers only a request bearing a signed three-part token
+            await using _ = await intercept(
+                defineContracts(
+                    {
+                        request: http.post(`${BASE_URL}/appEvents`, {
+                            headers: {
+                                authorization: /^Bearer [\w-]+\.[\w-]+\.[\w-]+$/u,
+                                'content-type': 'application/json',
+                            },
+                        }),
+                        response: http.json(CREATED_EVENT, { status: 201 }),
                     },
-                }),
+                    {
+                        request: http.post(`${BASE_URL}/appEventLocalizations`),
+                        response: http.json(CREATED_LOCALIZATION, { status: 201 }),
+                    },
+                ),
             );
-            fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
 
-            // Then - the authorization header contains the JWT token
-            await adapter.create(makeBroadcast());
+            // Then - the create went through, which only a matching token allows
+            const result = await adapter.create(makeBroadcast());
 
-            const [, options] = fetchSpy.mock.calls[0] ?? [];
-            expect(options.headers.Authorization).toBe('Bearer mock-jwt-token');
-            expect(options.headers['Content-Type']).toBe('application/json');
+            expect(result.status).toBe('created');
         });
 
         test('should map high priority correctly', async () => {
-            // Given - a broadcast with high priority
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(201, {
-                    data: {
-                        attributes: { badge: 'LIVE_EVENT', eventState: 'DRAFT' },
-                        id: 'e-1',
-                        type: 'appEvents',
-                    },
-                }),
-            );
-            fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
+            // Given - an Apple that accepts the event only when its priority reads HIGH
+            await using _ = await appleAcceptsCreate({
+                data: { attributes: { priority: 'HIGH' } },
+            });
 
-            // Then - the priority is mapped to "HIGH"
-            await adapter.create(makeBroadcast({ priority: 'high' }));
+            // Then - the create went through
+            const result = await adapter.create(makeBroadcast({ priority: 'high' }));
 
-            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
-            expect(eventBody.data.attributes.priority).toBe('HIGH');
+            expect(result.status).toBe('created');
         });
 
         test.each([
@@ -160,23 +171,13 @@ describe('appleAppStoreAdapter', () => {
             ['premiere', 'PREMIERE'],
             ['special-event', 'SPECIAL_EVENT'],
         ] as const)('should map the %s badge to %s', async (input, expected) => {
-            // Given - an event and a localization Apple accepts
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(201, {
-                    data: {
-                        attributes: { badge: expected, eventState: 'DRAFT' },
-                        id: 'e-1',
-                        type: 'appEvents',
-                    },
-                }),
-            );
-            fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
+            // Given - an Apple that accepts the event only under that spelling of the badge
+            await using _ = await appleAcceptsCreate({ data: { attributes: { badge: expected } } });
 
-            // Then - the badge reaches Apple under its own spelling
-            await adapter.create(makeBroadcast({ badge: input }));
+            // Then - the badge reached Apple under its own spelling
+            const result = await adapter.create(makeBroadcast({ badge: input }));
 
-            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
-            expect(eventBody.data.attributes.badge).toBe(expected);
+            expect(result.status).toBe('created');
         });
 
         test.each([
@@ -185,126 +186,84 @@ describe('appleAppStoreAdapter', () => {
             ['new-users', 'ATTRACT_NEW_USERS'],
             ['lapsed-users', 'ATTRACT_LAPSED_USERS'],
         ] as const)('should map the %s audience to %s', async (input, expected) => {
-            // Given - an event and a localization Apple accepts
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(201, {
-                    data: {
-                        attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                        id: 'e-1',
-                        type: 'appEvents',
-                    },
-                }),
-            );
-            fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
+            // Given - an Apple that accepts the event only under that purpose
+            await using _ = await appleAcceptsCreate({
+                data: { attributes: { purpose: expected } },
+            });
 
-            // Then - the audience reaches Apple as a purpose
-            await adapter.create(makeBroadcast({ audience: input }));
+            // Then - the audience reached Apple as a purpose
+            const result = await adapter.create(makeBroadcast({ audience: input }));
 
-            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
-            expect(eventBody.data.attributes.purpose).toBe(expected);
+            expect(result.status).toBe('created');
         });
 
         test('should map requiresPurchase to IN_APP_PURCHASE', async () => {
-            // Given - a broadcast that requires purchase
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(201, {
-                    data: {
-                        attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                        id: 'e-1',
-                        type: 'appEvents',
-                    },
-                }),
-            );
-            fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
+            // Given - an Apple that accepts the event only when a purchase is required
+            await using _ = await appleAcceptsCreate({
+                data: { attributes: { purchaseRequirement: 'IN_APP_PURCHASE' } },
+            });
 
-            // Then - the purchase requirement is set to IN_APP_PURCHASE
-            await adapter.create(makeBroadcast({ requiresPurchase: true }));
+            // Then - the create went through
+            const result = await adapter.create(makeBroadcast({ requiresPurchase: true }));
 
-            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
-            expect(eventBody.data.attributes.purchaseRequirement).toBe('IN_APP_PURCHASE');
+            expect(result.status).toBe('created');
         });
 
         test('should build territory schedules with dates', async () => {
-            // Given - a broadcast with specific territories
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(201, {
-                    data: {
-                        attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                        id: 'e-1',
-                        type: 'appEvents',
+            // Given - an Apple that accepts the event only with both territories and both dates
+            await using _ = await appleAcceptsCreate({
+                data: {
+                    attributes: {
+                        territorySchedules: [
+                            {
+                                eventEnd: '2026-04-15T00:00:00.000Z',
+                                eventStart: '2026-04-01T00:00:00.000Z',
+                                publishStart: '2026-04-01T00:00:00.000Z',
+                                territories: ['USA', 'FRA'],
+                            },
+                        ],
                     },
-                }),
-            );
-            fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
+                },
+            });
 
-            // Then - the territory schedules include the specified territories and dates
-            await adapter.create(
-                makeBroadcast({
-                    territories: ['USA', 'FRA'],
-                }),
-            );
+            // Then - the create went through
+            const result = await adapter.create(makeBroadcast({ territories: ['USA', 'FRA'] }));
 
-            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
-            const schedules = eventBody.data.attributes.territorySchedules;
-
-            expect(schedules).toHaveLength(1);
-            expect(schedules[0]?.territories).toStrictEqual(['USA', 'FRA']);
-            expect(schedules[0]?.eventStart).toBe('2026-04-01T00:00:00.000Z');
-            expect(schedules[0]?.eventEnd).toBe('2026-04-15T00:00:00.000Z');
+            expect(result.status).toBe('created');
         });
 
         test('should default to USA when no territories specified', async () => {
-            // Given - a broadcast without territories
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(201, {
-                    data: {
-                        attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                        id: 'e-1',
-                        type: 'appEvents',
-                    },
-                }),
-            );
-            fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
+            // Given - an Apple that accepts the event only when it is scheduled for the USA alone
+            await using _ = await appleAcceptsCreate({
+                data: { attributes: { territorySchedules: [{ territories: ['USA'] }] } },
+            });
 
-            // Then - the default territory is USA
-            await adapter.create(makeBroadcast());
+            // Then - the create went through
+            const result = await adapter.create(makeBroadcast());
 
-            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
-            expect(eventBody.data.attributes.territorySchedules).toHaveLength(1);
-            expect(eventBody.data.attributes.territorySchedules[0].territories).toStrictEqual([
-                'USA',
-            ]);
+            expect(result.status).toBe('created');
         });
 
         test('should default deepLink to empty string when not provided', async () => {
-            // Given - a broadcast without a deepLink
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(201, {
-                    data: {
-                        attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                        id: 'e-1',
-                        type: 'appEvents',
-                    },
-                }),
-            );
-            fetchSpy.mockResolvedValueOnce(mockResponse(201, { data: { id: 'l-1' } }));
-
-            // Then - the deepLink defaults to an empty string
+            // Given - an Apple that accepts the event only when its deep link is empty
+            await using _ = await appleAcceptsCreate({ data: { attributes: { deepLink: '' } } });
             const broadcast = makeBroadcast();
             delete broadcast.deepLink;
-            await adapter.create(broadcast);
 
-            const eventBody = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
-            expect(eventBody.data.attributes.deepLink).toBe('');
+            // Then - the create went through
+            const result = await adapter.create(broadcast);
+
+            expect(result.status).toBe('created');
         });
 
         test('should throw AppleAppStoreError on API failure', async () => {
-            // Given - an API that returns 403
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(403, null, '{"errors":[{"detail":"Forbidden"}]}'),
+            // Given - an Apple that refuses the event with a 403
+            await using _ = await intercept(
+                http.post(`${BASE_URL}/appEvents`),
+                http.json({ errors: [{ detail: 'Forbidden' }] }, { status: 403 }),
             );
 
-            // Then - an AppleAppStoreError is thrown with the correct status code
+            // Then - the refusal reaches the caller as the adapter's own error
             const caughtError = await adapter
                 .create(makeBroadcast())
                 .catch((error: unknown) => error);
@@ -316,9 +275,10 @@ describe('appleAppStoreAdapter', () => {
 
     describe('list', () => {
         test('should list events for the app', async () => {
-            // Given - an API that returns three events with different states
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(200, {
+            // Given - an Apple listing three events of this app in three different states
+            await using _ = await intercept(
+                http.get(`${BASE_URL}/apps/6444444444/appEvents`),
+                http.json({
                     data: [
                         {
                             attributes: {
@@ -351,23 +311,14 @@ describe('appleAppStoreAdapter', () => {
                 }),
             );
 
-            // Then - the events are returned with correctly mapped statuses
+            // Then - each event reaches the port under the status its state means
             const results = await adapter.list();
 
-            expect(results).toHaveLength(3);
-
-            expect(results[0]?.id).toBe('event-1');
-            expect(results[0]?.status).toBe('published');
-
-            expect(results[1]?.id).toBe('event-2');
-            expect(results[1]?.status).toBe('created');
-
-            expect(results[2]?.id).toBe('event-3');
-            expect(results[2]?.status).toBe('submitted');
-
-            // Verify URL includes the app ID
-            const [url] = fetchSpy.mock.calls[0] ?? [];
-            expect(url).toBe(`${BASE_URL}/apps/6444444444/appEvents`);
+            expect(results.map(({ id, status }) => ({ id, status }))).toStrictEqual([
+                { id: 'event-1', status: 'published' },
+                { id: 'event-2', status: 'created' },
+                { id: 'event-3', status: 'submitted' },
+            ]);
         });
 
         /* The last row is the fallback: a state the port does not know reads as `created`. */
@@ -382,8 +333,9 @@ describe('appleAppStoreAdapter', () => {
             ['UNKNOWN_STATE', 'created'],
         ] as const)('should read the %s event state as %s', async (appleState, expectedStatus) => {
             // Given - a listing that carries one event in that state
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(200, {
+            await using _ = await intercept(
+                http.get(`${BASE_URL}/apps/6444444444/appEvents`),
+                http.json({
                     data: [
                         {
                             attributes: {
@@ -400,110 +352,108 @@ describe('appleAppStoreAdapter', () => {
 
             // Then - the state reaches the port as the status it means
             const results = await adapter.list();
+
             expect(results[0]?.status).toBe(expectedStatus);
         });
 
         test('should return empty array when no events exist', async () => {
-            // Given - an API that returns no events
-            fetchSpy.mockResolvedValueOnce(mockResponse(200, { data: [] }));
+            // Given - an Apple with no event for this app
+            await using _ = await intercept(
+                http.get(`${BASE_URL}/apps/6444444444/appEvents`),
+                http.json({ data: [] }),
+            );
 
             // Then - an empty array is returned
             const results = await adapter.list();
+
             expect(results).toHaveLength(0);
         });
     });
 
     describe('update', () => {
         test('should send a PATCH request with partial attributes', async () => {
-            // Given - a mock response for a successful update
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(200, {
-                    data: {
-                        attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                        id: 'event-123',
-                        type: 'appEvents',
+            // Given - an Apple that accepts the patch only with both changed attributes
+            await using _ = await intercept(
+                http.patch(`${BASE_URL}/appEvents/event-123`, {
+                    body: {
+                        data: {
+                            attributes: {
+                                deepLink: 'signews://events/updated',
+                                priority: 'HIGH',
+                            },
+                            id: 'event-123',
+                            type: 'appEvents',
+                        },
                     },
                 }),
+                http.json(CREATED_EVENT),
             );
 
-            // Then - a PATCH request is sent with the correct attributes
+            // Then - the patch went through and the result names the event it changed
             const result = await adapter.update('event-123', {
                 deepLink: 'signews://events/updated',
                 priority: 'high',
             });
 
-            expect(result.id).toBe('event-123');
-            expect(result.provider).toBe('apple-app-store');
-
-            const [url, options] = fetchSpy.mock.calls[0] ?? [];
-            expect(url).toBe(`${BASE_URL}/appEvents/event-123`);
-            expect(options.method).toBe('PATCH');
-
-            const body = JSON.parse(options.body);
-            expect(body.data.id).toBe('event-123');
-            expect(body.data.type).toBe('appEvents');
-            expect(body.data.attributes.deepLink).toBe('signews://events/updated');
-            expect(body.data.attributes.priority).toBe('HIGH');
+            expect(result).toMatchObject({ id: 'event-123', provider: 'apple-app-store' });
         });
 
         test('should only include provided fields in the update', async () => {
-            // Given - a mock response for a successful update
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(200, {
-                    data: {
-                        attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                        id: 'event-123',
-                        type: 'appEvents',
-                    },
-                }),
+            // Given - an Apple that records the patch body rather than constraining it
+            let sent: unknown;
+            await using _ = await intercept(
+                http.patch(`${BASE_URL}/appEvents/event-123`),
+                (request) => {
+                    sent = request.body;
+                    return http.json(CREATED_EVENT);
+                },
             );
 
-            // Then - only the provided field is included in the request body
+            // Then - the body carries the one field the caller changed, and nothing else
             await adapter.update('event-123', { audience: 'lapsed-users' });
 
-            const body = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
-            expect(body.data.attributes).toStrictEqual({
-                purpose: 'ATTRACT_LAPSED_USERS',
+            expect(sent).toStrictEqual({
+                data: {
+                    attributes: { purpose: 'ATTRACT_LAPSED_USERS' },
+                    id: 'event-123',
+                    type: 'appEvents',
+                },
             });
         });
 
         test('should map requiresPurchase in updates', async () => {
-            // Given - an update with requiresPurchase set to true
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(200, {
-                    data: {
-                        attributes: { badge: 'SPECIAL_EVENT', eventState: 'DRAFT' },
-                        id: 'event-123',
-                        type: 'appEvents',
-                    },
+            // Given - an Apple that accepts the patch only when a purchase is required
+            await using _ = await intercept(
+                http.patch(`${BASE_URL}/appEvents/event-123`, {
+                    body: { data: { attributes: { purchaseRequirement: 'IN_APP_PURCHASE' } } },
                 }),
+                http.json(CREATED_EVENT),
             );
 
-            // Then - the purchase requirement is mapped correctly
-            await adapter.update('event-123', { requiresPurchase: true });
+            // Then - the patch went through
+            const result = await adapter.update('event-123', { requiresPurchase: true });
 
-            const body = JSON.parse(fetchSpy.mock.calls[0]?.[1].body);
-            expect(body.data.attributes.purchaseRequirement).toBe('IN_APP_PURCHASE');
+            expect(result.status).toBe('created');
         });
     });
 
     describe('delete', () => {
         test('should send a DELETE request', async () => {
-            // Given - a mock response for a successful deletion
-            fetchSpy.mockResolvedValueOnce(mockResponse(204, null));
+            // Given - an Apple that answers a deletion of this event with an empty 204
+            await using _ = await intercept(
+                http.delete(`${BASE_URL}/appEvents/event-123`),
+                http.empty(),
+            );
 
-            // Then - a DELETE request is sent to the correct URL
-            await adapter.delete('event-123');
-
-            const [url, options] = fetchSpy.mock.calls[0] ?? [];
-            expect(url).toBe(`${BASE_URL}/appEvents/event-123`);
-            expect(options.method).toBe('DELETE');
+            // Then - the deletion resolves, which only a matching URL and verb allow
+            await expect(adapter.delete('event-123')).resolves.toBeUndefined();
         });
 
         test('should throw on API failure', async () => {
-            // Given - an API that returns 404
-            fetchSpy.mockResolvedValueOnce(
-                mockResponse(404, null, '{"errors":[{"detail":"Not found"}]}'),
+            // Given - an Apple that knows no such event
+            await using _ = await intercept(
+                http.delete(`${BASE_URL}/appEvents/nonexistent`),
+                http.json({ errors: [{ detail: 'Not found' }] }, { status: 404 }),
             );
 
             // Then - an AppleAppStoreError is thrown
@@ -513,30 +463,22 @@ describe('appleAppStoreAdapter', () => {
 
     describe('error handling', () => {
         test('should include status code and response body in error', async () => {
-            // Given - an API that returns 422 with error details
-            const errorResponse = '{"errors":[{"detail":"Invalid request","code":"INVALID"}]}';
-            fetchSpy.mockResolvedValueOnce(mockResponse(422, null, errorResponse));
+            // Given - an Apple that refuses the event with a 422 and a detailed body
+            const errorBody = { errors: [{ code: 'INVALID', detail: 'Invalid request' }] };
+            await using _ = await intercept(
+                http.post(`${BASE_URL}/appEvents`),
+                http.json(errorBody, { status: 422 }),
+            );
 
-            // Then - the error contains the status code and response body
+            // Then - the error carries the status code and the body verbatim
             const rejection: unknown = await adapter
                 .create(makeBroadcast())
                 .catch((error: unknown) => error);
 
-            expect(rejection).toBeInstanceOf(AppleAppStoreError);
-            expect(rejection).toMatchObject({ responseBody: errorResponse, statusCode: 422 });
+            expect(rejection).toMatchObject({
+                responseBody: JSON.stringify(errorBody),
+                statusCode: 422,
+            });
         });
     });
 });
-
-// --- Helpers ---
-
-/** A real `Response`, so the adapter reads the object a `fetch` would have handed it. */
-function mockResponse(status: number, body: unknown, textBody?: string): Response {
-    const ok = status >= 200 && status < 300;
-
-    return new Response(status === 204 ? null : (textBody ?? JSON.stringify(body)), {
-        headers: { 'Content-Type': 'application/json' },
-        status,
-        statusText: ok ? 'OK' : 'Error',
-    });
-}

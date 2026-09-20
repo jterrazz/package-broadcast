@@ -44,17 +44,40 @@ describe('sendBroadcast', () => {
     });
 
     test('should send to multiple providers concurrently', async () => {
-        // Given - two providers with different names
-        const provider1 = makeProvider('apple', { id: 'apple-1' });
-        const provider2 = makeProvider('google', { id: 'google-1' });
+        // Given - three providers with different names
+        const providers = [makeProvider('alpha'), makeProvider('beta'), makeProvider('gamma')];
         const broadcast = makeBroadcast();
 
-        // Then - both providers receive the broadcast
-        const results = await sendBroadcast(broadcast, [provider1, provider2]);
+        // Then - every provider receives the broadcast, and the results keep their order
+        const results = await sendBroadcast(broadcast, providers);
 
-        expect(results).toHaveLength(2);
-        expect(results[0]?.provider).toBe('apple');
-        expect(results[1]?.provider).toBe('google');
+        expect(results).toHaveLength(3);
+        expect(results.map((result) => result.provider)).toStrictEqual(['alpha', 'beta', 'gamma']);
+    });
+
+    test('should call every provider when one of three rejects', async () => {
+        // Given - three providers, the middle one rejecting
+        const alpha = makeProvider('alpha');
+        const beta: BroadcastProviderPort = {
+            create: vi.fn().mockRejectedValue(new Error('Network timeout')),
+            delete: vi.fn(),
+            list: vi.fn(),
+            name: 'beta',
+            update: vi.fn(),
+        };
+        const gamma = makeProvider('gamma');
+
+        // Then - the fan-out reached all three, and only the rejection failed
+        const results = await sendBroadcast(makeBroadcast(), [alpha, beta, gamma]);
+
+        expect(results.map((result) => result.status)).toStrictEqual([
+            'created',
+            'failed',
+            'created',
+        ]);
+        expect(alpha.create).toHaveBeenCalledOnce();
+        expect(beta.create).toHaveBeenCalledOnce();
+        expect(gamma.create).toHaveBeenCalledOnce();
     });
 
     test('should handle provider failures gracefully', async () => {

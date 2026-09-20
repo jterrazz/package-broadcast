@@ -41,7 +41,7 @@ Build, test and lint artefacts live under `.artifacts/<tool>/`, per the toolchai
 | Apple-specific behaviour                           | `src/adapters/apple/apple-app-store.adapter.ts` or `apple-authentication.ts`                         |
 | What a consumer can import                         | `src/index.ts`                                                                                       |
 
-A file named `*.port.ts` holds a contract, never an implementation; a file named `*.adapter.ts` holds one channel's implementation and nothing another channel needs. A test lives beside the file it proves, named `*.test.ts`; the one subject that does not is the Apple lifecycle, which lives under `specs/integration/` — see [Testing](03-testing.md) for which fork sends a test where.
+A file named `*.port.ts` holds a contract, never an implementation; a file named `*.adapter.ts` holds one channel's implementation and nothing another channel needs. A test lives beside the file it proves, named `*.test.ts`; the one subject that does not is the Apple lifecycle, which lives under `specs/integration/` and is named `*.spec.ts` for it — see [Testing](03-testing.md) for which fork sends a test where, and which suffix follows.
 
 ## Conventions
 

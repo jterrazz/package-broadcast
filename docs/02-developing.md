@@ -25,7 +25,7 @@ The toolchain is two devDependencies. `@jterrazz/typescript` carries the profile
 | `npm run lint:fix` | `typescript fix`                                             |
 | `npm run build`    | `typescript bundle` — ESM + CJS + types to `dist/`           |
 
-The `Makefile` wraps the same three behind `make install` / `make build` / `make lint` / `make test`, each depending on a `node_modules/.install` sentinel keyed off `package-lock.json` so a stale install is never silently reused. `make lint` does not itself depend on `make build` — run `make build` first on a fresh checkout, or `make lint`'s Publish (packaging) pass fails on a `dist/` that was never produced.
+The `Makefile` wraps the same three behind `make install` / `make build` / `make lint` / `make test`, each depending on a `node_modules/.install` sentinel keyed off `package-lock.json` so a stale install is never silently reused. `make lint` depends on `make build` itself, so a fresh checkout's `make lint` produces `dist/` before its Publish (packaging) pass reads it — `npm run lint` alone still needs `npm run build` first, since the two `package.json` scripts do not chain.
 
 Build, test and lint artefacts live under `.artifacts/<tool>/`, per the toolchain's own convention — nothing this package's own tooling writes should land anywhere else.
 

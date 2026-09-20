@@ -9,7 +9,7 @@ install: node_modules/.install
 build: node_modules/.install
 	npm run build
 
-lint: node_modules/.install
+lint: build
 	npm run lint
 
 test: node_modules/.install

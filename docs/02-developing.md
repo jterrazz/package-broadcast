@@ -12,18 +12,18 @@ No build step is needed to run the tests or the lint — they read `src/` direct
 
 ## The toolchain
 
-The toolchain is two devDependencies. `@jterrazz/typescript` carries the profile this package names — `library`, the profile for a package published to a registry: `tsconfig.json` extends its `library` preset and `oxfmt.config.ts` hands its config straight to `oxfmt`. `@jterrazz/test` carries the `testing` fragment, the conventions the suites answer to; `oxlint.config.ts` composes the two, `compose(library, testing)`, which is the shape every repository of the estate with a test suite uses.
+The toolchain is two devDependencies. `@jterrazz/typescript` carries the profile this package names — `library`, the profile for a package published to a registry: `tsconfig.json` extends its `library` preset and `oxfmt.config.ts` hands its config straight to `oxfmt`. `@jterrazz/test` carries two things: the `testing` fragment, the conventions the suites answer to, which `oxlint.config.ts` composes with the profile — `compose(library, testing)`, the shape every repository of the estate with a test suite uses — and the runner preset `vitest.config.ts` states its projects through, `defineSpecConfig` from `@jterrazz/test/vitest`. A member with tests of its own owes that config: without it, vitest's own 5 s budget is what the suites inherit rather than what they chose.
 
 `oxfmt.config.ts` names the type of its default export, because the `library` tsconfig carries `isolatedDeclarations` and will not infer one; `oxlint.config.ts` does not need to, because `compose` is declared as returning `OxlintConfig` and `defineConfig` passes that type straight through — nothing is left to infer. That preset is also what forbids an `enum`, a `namespace` and a parameter property anywhere in `src/` — a published package emits declarations, and those three cannot be erased.
 
 `npm run lint` is `typescript check` — type-check, lint, format-check, the gitignore/artefact convention, unused-code, and, run from the repository root, the manual-layout gate this corpus now answers to. `npm run lint:fix` is `typescript fix`.
 
-| Command            | Runs                                               |
-| ------------------ | -------------------------------------------------- |
-| `npm test`         | `vitest --run` — see [Testing](03-testing.md)      |
-| `npm run lint`     | `typescript check`                                 |
-| `npm run lint:fix` | `typescript fix`                                   |
-| `npm run build`    | `typescript bundle` — ESM + CJS + types to `dist/` |
+| Command            | Runs                                                         |
+| ------------------ | ------------------------------------------------------------ |
+| `npm test`         | `vitest --run`, both projects — see [Testing](03-testing.md) |
+| `npm run lint`     | `typescript check`                                           |
+| `npm run lint:fix` | `typescript fix`                                             |
+| `npm run build`    | `typescript bundle` — ESM + CJS + types to `dist/`           |
 
 The `Makefile` wraps the same three behind `make install` / `make build` / `make lint` / `make test`, each depending on a `node_modules/.install` sentinel keyed off `package-lock.json` so a stale install is never silently reused.
 
@@ -41,7 +41,7 @@ Build, test and lint artefacts live under `.artifacts/<tool>/`, per the toolchai
 | Apple-specific behaviour                           | `src/adapters/apple/apple-app-store.adapter.ts` or `apple-authentication.ts`                         |
 | What a consumer can import                         | `src/index.ts`                                                                                       |
 
-A file named `*.port.ts` holds a contract, never an implementation; a file named `*.adapter.ts` holds one channel's implementation and nothing another channel needs. A test lives beside the file it proves, named `*.test.ts` — see [Testing](03-testing.md) for the one exception.
+A file named `*.port.ts` holds a contract, never an implementation; a file named `*.adapter.ts` holds one channel's implementation and nothing another channel needs. A test lives beside the file it proves, named `*.test.ts`; the one subject that does not is the Apple lifecycle, which lives under `specs/integration/` — see [Testing](03-testing.md) for which fork sends a test where.
 
 ## Conventions
 

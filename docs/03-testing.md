@@ -9,21 +9,23 @@ Two vitest projects, both run by `npm test`: `unit` for the module tests that si
 | Project       | Collects                         | Whose subject is                          |
 | ------------- | -------------------------------- | ----------------------------------------- |
 | `unit`        | `**/*.test.ts` outside `specs/`  | a module alone                            |
-| `integration` | `specs/integration/**/*.test.ts` | a module against a declared outside world |
+| `integration` | `specs/integration/**/*.spec.ts` | a module against a declared outside world |
 
 The fork is the subject, never the amount of machinery. `sendBroadcast` against three doubles is a module alone however many providers it fans out to; the Apple adapter driven create → update → delete is an assembled thing however little it starts.
+
+The suffix says which side of that fork a file is on: beside the code it proves a test is `*.test.ts`, under `specs/<facet>/` it is `*.spec.ts`. The projects collect by that suffix, and `@jterrazz/test`'s conventions checker refuses a `.test.ts` under `specs/` — `npx jterrazz-test-check --fix` renames it.
 
 ## Unit tests
 
 Each source file that carries logic has a `*.test.ts` sibling:
 
 - `src/adapters/apple/apple-authentication.test.ts` proves `createAppleJwt` produces a three-part JWT with the header, issuer, audience and expiry App Store Connect requires, against the sample ES256 key of `apple-authentication.fixtures.ts`.
-- `src/adapters/apple/apple-app-store.adapter.test.ts` proves `AppleAppStoreAdapter`'s create/update/delete/list, one `describe` block per method, against contracts that declare what App Store Connect answers.
+- `src/adapters/apple/apple-app-store.adapter.test.ts` proves `AppleAppStoreAdapter`'s create/update/delete/list, one top-level `describe` per method, against contracts that declare what App Store Connect answers.
 - `src/send-broadcast.test.ts` proves the fan-out: every provider is called, a rejection becomes a `failed` result, and the result order matches the provider order.
 
 ## The integration spec
 
-`specs/integration/apple-app-store/lifecycle.test.ts` is the one test that crosses the port/adapter boundary in one file. It runs on `specs/integration/integration.specification.ts` — a runner with no services, because what earns the folder here is the declared world rather than a container — and drives `create` → `list`, `create` → `update` → `delete`, and a refused `create` followed by a successful retry.
+`specs/integration/apple-app-store/lifecycle.spec.ts` is the one test that crosses the port/adapter boundary in one file. It runs on `specs/integration/integration.specification.ts` — a runner with no services, because what earns the folder here is the declared world rather than a container — and drives `create` → `list`, `create` → `update` → `delete`, and a refused `create` followed by a successful retry.
 
 What makes it an integration spec rather than another unit test is that it exercises the adapter's whole request pipeline (event, then localization, then the mapped HTTP verb) in sequence, the way a real caller would, instead of one method in isolation. Its subject is handed to `.call()`, so a refusal is read as `result.error` rather than caught by the test.
 
@@ -54,7 +56,7 @@ The filter is the assertion. `http.post(url, { body })` matches a deep subset of
 
 ## The conventions the lint enforces
 
-`oxlint.config.ts` composes `@jterrazz/test`'s `testing` fragment (see [Developing](02-developing.md)), so the suites are judged, not only run. Two rules bind every test here: each body narrates itself with a `// Given -` comment and a `// Then -` comment, in that order (B4 — the marker is a hyphen, not a dash), and the vitest rules cap assertion count and demand typed mocks.
+`oxlint.config.ts` composes `@jterrazz/test`'s `testing` fragment (see [Developing](02-developing.md)), so the suites are judged, not only run. Three rules bind every test here: each body narrates itself with a `// Given -` comment and a `// Then -` comment, in that order (B4 — the marker is a hyphen, not a dash); `describe` nests one level deep at most, so a file groups by subject and the test name stays the sentence (J10); and the vitest rules cap assertion count and demand typed mocks.
 
 The fragment's structural rules are satisfied rather than recorded. A test is the sibling of the module it covers or a spec under `specs/`, and nothing under `src/` reaches for `vi.mock` — the two entries `oxlint.baseline.json` used to carry for those conventions are gone, and what the file still holds is the ordinary typing debt described in [Developing](02-developing.md).
 

@@ -1,4 +1,3 @@
-// Ports
 export type {
     Broadcast,
     BroadcastAudience,
@@ -7,10 +6,8 @@ export type {
     BroadcastResult,
 } from './ports/broadcast.port.js';
 
-// Core
 export { sendBroadcast } from './send-broadcast.js';
 
-// Adapters - Apple
 export {
     AppleAppStoreAdapter,
     type AppleAppStoreConfig,

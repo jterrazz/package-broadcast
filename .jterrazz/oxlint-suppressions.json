@@ -12,30 +12,5 @@
         "typescript/no-unsafe-type-assertion": {
             "count": 2
         }
-    },
-    "src/adapters/apple/apple-app-store.error.ts": {
-        "jterrazz-typescript/comment-states-its-kind": {
-            "count": 1
-        }
-    },
-    "src/adapters/apple/apple-authentication.ts": {
-        "jterrazz-typescript/comment-states-its-kind": {
-            "count": 2
-        }
-    },
-    "src/index.ts": {
-        "jterrazz-typescript/comment-states-its-kind": {
-            "count": 3
-        }
-    },
-    "src/ports/broadcast.port.ts": {
-        "jterrazz-typescript/comment-states-its-kind": {
-            "count": 3
-        }
-    },
-    "src/send-broadcast.ts": {
-        "jterrazz-typescript/comment-states-its-kind": {
-            "count": 1
-        }
     }
 }

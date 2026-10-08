@@ -11,15 +11,13 @@ type AppleAuthConfig = {
     privateKey: string;
 };
 
-/** 20 minutes — the longest lifetime App Store Connect accepts on a token. */
+// outside: 20 minutes is the longest lifetime App Store Connect accepts on a token.
 const TOKEN_LIFETIME_SECONDS = 20 * 60;
 const AUDIENCE = 'appstoreconnect-v1';
 const ALGORITHM = 'ES256';
 
 /**
- * Generates a short-lived JWT for the App Store Connect API.
- * Tokens are valid for 20 minutes.
- *
+ * Signs the 20-minute ES256 token every App Store Connect API call carries.
  * @see https://developer.apple.com/documentation/appstoreconnectapi/generating_tokens_for_api_requests
  */
 async function createAppleJwt(config: AppleAuthConfig): Promise<string> {

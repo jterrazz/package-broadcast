@@ -1,9 +1,6 @@
 import type { Broadcast, BroadcastProviderPort, BroadcastResult } from './ports/broadcast.port.js';
 
-/**
- * Send a broadcast to one or more providers concurrently.
- * Returns a result per provider, including failures.
- */
+/** Sends a broadcast to every provider at once, answering one result per provider in their order, a rejection as `failed`. */
 export async function sendBroadcast(
     broadcast: Broadcast,
     providers: BroadcastProviderPort[],

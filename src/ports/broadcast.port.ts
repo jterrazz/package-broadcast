@@ -1,7 +1,4 @@
-/**
- * Core broadcast model — a platform-agnostic announcement
- * that can be distributed to multiple channels.
- */
+/** Core broadcast model — a platform-agnostic announcement that can be distributed to multiple channels. */
 export type Broadcast = {
     /** Unique identifier (optional, assigned by providers) */
     id?: string;
@@ -57,9 +54,7 @@ export type BroadcastBadge =
 
 export type BroadcastAudience = 'active-users' | 'all' | 'lapsed-users' | 'new-users';
 
-/**
- * Result of sending a broadcast to a provider.
- */
+/** Result of sending a broadcast to a provider. */
 export type BroadcastResult = {
     /** Provider-assigned ID */
     id: string;
@@ -74,9 +69,7 @@ export type BroadcastResult = {
     raw?: unknown;
 };
 
-/**
- * Port that all broadcast providers must implement.
- */
+/** Port that all broadcast providers must implement. */
 export type BroadcastProviderPort = {
     /** Provider identifier */
     readonly name: string;

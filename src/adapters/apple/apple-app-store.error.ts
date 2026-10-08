@@ -1,8 +1,4 @@
-/**
- * The failure an App Store Connect call raises when the API refuses it.
- * It carries the HTTP status and the raw response body, so a rejection stays
- * debuggable once it has crossed the adapter's boundary.
- */
+/** The refusal of an App Store Connect call, carrying the HTTP status and the raw response body. */
 class AppleAppStoreError extends Error {
     readonly statusCode: number;
     readonly responseBody: string;

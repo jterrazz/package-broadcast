@@ -4,6 +4,7 @@ import chunkRefused from './http/chunk-refused.js';
 import chunkUploaded from './http/chunk-uploaded.js';
 import eventCreated from './http/event-created.js';
 import eventDeleted from './http/event-deleted.js';
+import eventListedAs from './http/event-listed-as.js';
 import eventMissing from './http/event-missing.js';
 import eventRefused from './http/event-refused.js';
 import eventUpdated from './http/event-updated.js';
@@ -25,6 +26,9 @@ export const refusingApp = (appId: string) => defineStubs(eventRefused(appId));
 
 /** The app's events, one per state in `states`. */
 export const listing = (states: readonly string[]) => defineStubs(eventsListed(states));
+
+/** The app's one event, as App Store Connect wrote `event`. */
+export const listingAs = (event: object) => defineStubs(eventListedAs(event));
 
 /** An App Store Connect taking a patch of `event-1`, and echoing it. */
 export const updating = defineStubs(eventUpdated);

@@ -1,7 +1,0 @@
-{
-    "eslint/no-await-in-loop": 1,
-    "typescript/no-unsafe-assignment": 2,
-    "typescript/no-unsafe-member-access": 7,
-    "typescript/no-unsafe-type-assertion": 2,
-    "vitest/require-mock-type-parameters": 24
-}

@@ -1,19 +1,28 @@
-# @jterrazz/broadcast — documentation
+# @jterrazz/broadcast — the manual
 
-A multi-channel broadcast system: define an announcement once, send it to every provider that implements the port. This corpus is where that knowledge is authored — `AGENTS.md` and the `jterrazz-broadcast` skill route into it; they never restate it.
+A multi-channel broadcast system: define an announcement once, send it to every provider that implements the port. What the package is and how a consumer starts using it is the repository's README; this page lists every page of the manual, by what the reader came to do.
 
-## Table of contents
+## Guides
 
-The first four chapters are the spine every repository of the estate carries; the rest are this package's own subjects, numbered after it.
+| Page                                         | Answers                                                                                        |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [Develop](guides/develop.md)                 | Changing the package: the declaration, the gestures, where a new file goes, what it owes       |
+| [Test](guides/test.md)                       | Proving a change: the specs, the declared App Store Connect, the tarball, the mutation verdict |
+| [Write a channel](guides/write-a-channel.md) | Adding a channel — in a consumer's code, or shipped by this package                            |
+| [Release](guides/release.md)                 | How the package is published, and who cuts a release                                           |
 
-| Chapter                                 | Covers                                                                          |
-| --------------------------------------- | ------------------------------------------------------------------------------- |
-| [01 — Architecture](01-architecture.md) | The three layers — ports, core, adapters — and how a broadcast fans out         |
-| [02 — Developing](02-developing.md)     | The toolchain, the commands, where a new provider's code goes                   |
-| [03 — Testing](03-testing.md)           | The unit and integration suites, what each proves and what neither does         |
-| [04 — Operating](04-operating.md)       | What publishes this package, and what a merge to `main` does not do             |
-| [05 — Channels](05-channels.md)         | The provider port, the Apple App Store channel today, the channels planned next |
+## Concepts
+
+| Page                                     | Answers                                                                 |
+| ---------------------------------------- | ----------------------------------------------------------------------- |
+| [Architecture](concepts/architecture.md) | The three layers — ports, core, adapters — and how a broadcast fans out |
+
+## Reference
+
+| Page                                            | Answers                                                                                     |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [Apple App Store](reference/apple-app-store.md) | The Apple channel: its credentials, what each call sends, the field mapping, Apple's limits |
 
 ## Decisions
 
-The records of decisions this package alone took are in [`decisions/`](decisions/), numbered in the order they were taken. A decision spanning several repositories is recorded by the corpus that spans them.
+The records of decisions this package alone took are in [`decisions/`](decisions/), numbered in the order they were taken, the mold `_template.md` beside them. A decision spanning several repositories is recorded by the corpus that spans them.

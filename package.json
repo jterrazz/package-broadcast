@@ -20,7 +20,7 @@
         "registry": "https://registry.npmjs.org/"
     },
     "scripts": {
-        "build": "typescript bundle",
+        "build": "typescript build",
         "lint": "typescript check",
         "lint:fix": "typescript fix",
         "test": "vitest --run"
@@ -29,8 +29,8 @@
         "jose": "^6.2.2"
     },
     "devDependencies": {
-        "@jterrazz/test": "^16.1.0",
-        "@jterrazz/typescript": "^10.3.1",
+        "@jterrazz/test": "file:../package-test",
+        "@jterrazz/typescript": "file:../package-typescript",
         "@types/node": "^25.5.0",
         "vitest": "^5.0.1"
     }

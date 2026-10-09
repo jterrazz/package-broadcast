@@ -1,13 +1,13 @@
 ---
 name: jterrazz-broadcast
-description: Multi-channel announcements via @jterrazz/broadcast — App Store in-app events, push notifications. Use when creating, sending, or managing announcements.
+description: Multi-channel announcements via @jterrazz/broadcast — App Store in-app events, and channels of your own. Use when creating, sending, or managing announcements.
 ---
 
 # @jterrazz/broadcast
 
 Part of the @jterrazz ecosystem. Defines how apps announce and distribute events.
 
-Define an announcement once, send it to multiple channels — App Store, push, email, in-app.
+Define an announcement once, send it to every channel — App Store In-App Events today, and any channel you implement. The manual is the package's `docs/` (`docs/README.md` maps it).
 
 ## Core model
 
@@ -59,7 +59,7 @@ await apple.delete('event-id');
 
 ## Multi-provider fan-out
 
-`sendBroadcast` runs all providers concurrently. One failing won't block others. Each result has a `status` field: `created | submitted | approved | published | rejected | failed`.
+`sendBroadcast` runs all providers concurrently and answers one result per provider, in order. One failing won't block others: its result is `failed`, its rejection as `raw`. Statuses: `created | submitted | approved | published | rejected | failed`. A refused App Store Connect call rejects with `AppleAppStoreError` (`statusCode`, `responseBody`); an image that cannot be uploaded rejects the create after the event exists.
 
 ## Always
 

@@ -1,6 +1,6 @@
 # @jterrazz/broadcast
 
-Multi-channel broadcast system for distributing announcements across platforms. Define an announcement once, send it everywhere — App Store In-App Events, Google Play, push notifications, email, and more.
+Multi-channel broadcast system for distributing announcements across platforms. Define an announcement once, send it everywhere — App Store In-App Events today, and any channel you implement.
 
 ## Install
 
@@ -36,25 +36,24 @@ await sendBroadcast(
 );
 ```
 
-`sendBroadcast` fans out to all providers concurrently. If one fails, the others still succeed — each result includes a `status` field.
+`sendBroadcast` fans out to all providers concurrently. If one fails, the others still succeed — each result carries a `status`, `failed` for a channel that rejected.
 
 ## Documentation
 
-The full corpus lives in [`docs/`](docs/):
+The manual lives in [`docs/`](docs/README.md), cut by what the reader came to do:
 
-- [Architecture](docs/01-architecture.md) — the ports/core/adapters layers and the fan-out.
-- [Developing](docs/02-developing.md) — the toolchain and where a change opens a file.
-- [Testing](docs/03-testing.md) — the unit and integration suites.
-- [Operating](docs/04-operating.md) — what publishes this package, and what a merge does not do.
-- [Channels](docs/05-channels.md) — the provider port, the Apple App Store channel, and what's planned.
+- [Architecture](docs/concepts/architecture.md) — the ports, the core and the adapters, and the fan-out.
+- [Apple App Store](docs/reference/apple-app-store.md) — the credentials, what each call sends, the field mapping, Apple's limits.
+- [Write a channel](docs/guides/write-a-channel.md) — a channel of your own, or one this package ships.
+- [Develop](docs/guides/develop.md), [Test](docs/guides/test.md), [Release](docs/guides/release.md) — changing, proving and publishing the package.
 
-For agents: read the chapters straight from the repo, plus the [`skills/jterrazz-broadcast`](skills/jterrazz-broadcast/SKILL.md) Claude Code skill.
+For agents: the [`skills/jterrazz-broadcast`](skills/jterrazz-broadcast/SKILL.md) Claude Code skill routes into the manual.
 
 ## Development
 
 ```bash
-npm install
-npm test        # Run tests (vitest)
-npm run build   # Build ESM + CJS (rolldown)
-npm run lint    # Type check + oxlint + oxfmt
+make install    # npm ci
+make check      # lint, specs, mutation — the gate before a commit
 ```
+
+The gestures and what each runs are [Develop § The gestures](docs/guides/develop.md#the-gestures)'s.

@@ -35,31 +35,25 @@ class AppleAppStoreAdapter implements BroadcastProviderPort {
     async create(broadcast: Broadcast): Promise<BroadcastResult> {
         const token = await createAppleJwt(this.config);
 
-        const raw = await callAppStoreConnect(token, '/appEvents', {
-            method: 'POST',
-            body: {
-                data: {
-                    attributes: eventAttributesOf(broadcast),
-                    relationships: { app: { data: { id: this.config.appId, type: 'apps' } } },
-                    type: 'appEvents',
-                },
+        const raw = await callAppStoreConnect(token, 'POST', '/appEvents', {
+            data: {
+                attributes: eventAttributesOf(broadcast),
+                relationships: { app: { data: { id: this.config.appId, type: 'apps' } } },
+                type: 'appEvents',
             },
         });
         const eventId = readAnswer(AppleCreatedSchema, raw).data.id;
 
-        const localization = await callAppStoreConnect(token, '/appEventLocalizations', {
-            method: 'POST',
-            body: {
-                data: {
-                    attributes: {
-                        locale: 'en-US',
-                        longDescription: broadcast.longDescription,
-                        name: broadcast.title,
-                        shortDescription: broadcast.shortDescription,
-                    },
-                    relationships: { appEvent: { data: { id: eventId, type: 'appEvents' } } },
-                    type: 'appEventLocalizations',
+        const localization = await callAppStoreConnect(token, 'POST', '/appEventLocalizations', {
+            data: {
+                attributes: {
+                    locale: 'en-US',
+                    longDescription: broadcast.longDescription,
+                    name: broadcast.title,
+                    shortDescription: broadcast.shortDescription,
                 },
+                relationships: { appEvent: { data: { id: eventId, type: 'appEvents' } } },
+                type: 'appEventLocalizations',
             },
         });
         const localizationId = readAnswer(AppleCreatedSchema, localization).data.id;
@@ -82,13 +76,17 @@ class AppleAppStoreAdapter implements BroadcastProviderPort {
 
     async delete(id: string): Promise<void> {
         const token = await createAppleJwt(this.config);
-        await callAppStoreConnect(token, `/appEvents/${id}`, { method: 'DELETE' });
+        await callAppStoreConnect(token, 'DELETE', `/appEvents/${id}`);
     }
 
     async list(): Promise<BroadcastResult[]> {
         const token = await createAppleJwt(this.config);
 
-        const listing = await callAppStoreConnect(token, `/apps/${this.config.appId}/appEvents`);
+        const listing = await callAppStoreConnect(
+            token,
+            'GET',
+            `/apps/${this.config.appId}/appEvents`,
+        );
 
         return readAnswer(AppleEventListSchema, listing).data.map((event) => ({
             id: event.id,
@@ -101,9 +99,8 @@ class AppleAppStoreAdapter implements BroadcastProviderPort {
     async update(id: string, broadcast: Partial<Broadcast>): Promise<BroadcastResult> {
         const token = await createAppleJwt(this.config);
 
-        const raw = await callAppStoreConnect(token, `/appEvents/${id}`, {
-            body: { data: { attributes: patchAttributesOf(broadcast), id, type: 'appEvents' } },
-            method: 'PATCH',
+        const raw = await callAppStoreConnect(token, 'PATCH', `/appEvents/${id}`, {
+            data: { attributes: patchAttributesOf(broadcast), id, type: 'appEvents' },
         });
         const event = readAnswer(AppleEventResponseSchema, raw).data;
 

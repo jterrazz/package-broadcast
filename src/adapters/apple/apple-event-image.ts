@@ -23,22 +23,19 @@ async function reserve(
     assetType: AssetType,
     image: { bytes: Uint8Array; fileName: string },
 ) {
-    const answer = await callAppStoreConnect(token, '/appEventScreenshots', {
-        method: 'POST',
-        body: {
-            data: {
-                attributes: {
-                    appEventAssetType: assetType,
-                    fileName: image.fileName,
-                    fileSize: image.bytes.byteLength,
-                },
-                relationships: {
-                    appEventLocalization: {
-                        data: { id: localizationId, type: 'appEventLocalizations' },
-                    },
-                },
-                type: 'appEventScreenshots',
+    const answer = await callAppStoreConnect(token, 'POST', '/appEventScreenshots', {
+        data: {
+            attributes: {
+                appEventAssetType: assetType,
+                fileName: image.fileName,
+                fileSize: image.bytes.byteLength,
             },
+            relationships: {
+                appEventLocalization: {
+                    data: { id: localizationId, type: 'appEventLocalizations' },
+                },
+            },
+            type: 'appEventScreenshots',
         },
     });
 
@@ -71,14 +68,11 @@ export async function uploadEventImage(
         }
     }
 
-    await callAppStoreConnect(token, `/appEventScreenshots/${screenshot.id}`, {
-        body: {
-            data: {
-                attributes: { uploaded: true },
-                id: screenshot.id,
-                type: 'appEventScreenshots',
-            },
+    await callAppStoreConnect(token, 'PATCH', `/appEventScreenshots/${screenshot.id}`, {
+        data: {
+            attributes: { uploaded: true },
+            id: screenshot.id,
+            type: 'appEventScreenshots',
         },
-        method: 'PATCH',
     });
 }

@@ -55,11 +55,11 @@ export async function uploadEventImage(
     const image = await download(imageUrl);
     const screenshot = await reserve(token, localizationId, assetType, image);
 
-    for (const operation of screenshot.attributes.uploadOperations) {
+    for (const operation of screenshot.attributes.uploadOperations ?? []) {
         const response = await fetch(operation.url, {
             body: image.bytes.slice(operation.offset, operation.offset + operation.length),
-            headers: Object.fromEntries(
-                operation.requestHeaders.map(({ name, value }) => [name, value]),
+            headers: new Headers(
+                operation.requestHeaders?.map(({ name, value }): [string, string] => [name, value]),
             ),
             method: operation.method,
         });

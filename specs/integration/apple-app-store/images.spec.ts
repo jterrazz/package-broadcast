@@ -7,7 +7,9 @@ import {
     withCard,
     withChunkRefused,
     withDetail,
+    withHeaderlessUpload,
     withImageMissing,
+    withNothingToUpload,
 } from '../__setup__/stubs/app-store.stubs.js';
 import { integration } from '../integration.specification.js';
 
@@ -57,6 +59,24 @@ describe('images', () => {
             );
 
         // Then - the event was created with its detail image committed
+        expect(result.value).toMatch(CREATED);
+    });
+
+    test.each([
+        ['an operation naming no header', withHeaderlessUpload],
+        ['no upload operation', withNothingToUpload],
+    ])('commits a card App Store Connect reserved with %s', async (_, world) => {
+        // Given - an App Store Connect answering the card's reservation without what it may leave out
+        const result = await integration
+            .intercept(world('https://cdn.example/spring-card.png'))
+            .call(
+                async () =>
+                    await new AppleAppStoreAdapter(APP).create(
+                        springEvent({ cardImageUrl: 'https://cdn.example/spring-card.png' }),
+                    ),
+            );
+
+        // Then - the event was created with its card committed
         expect(result.value).toMatch(CREATED);
     });
 

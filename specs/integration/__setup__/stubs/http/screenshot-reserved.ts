@@ -7,8 +7,30 @@ type Reservation = {
     id: string;
 };
 
-/** App Store Connect reserving a screenshot of `loc-1` and answering with two upload operations, of the first 4 bytes and of the rest. */
-export default function screenshotReserved({ assetType, fileName, fileSize, id }: Reservation) {
+const inTwoChunks = (id: string, fileSize: number) => ({
+    uploadOperations: [
+        {
+            length: 4,
+            method: 'PUT',
+            offset: 0,
+            requestHeaders: [{ name: 'Content-Type', value: 'image/png' }],
+            url: `https://uploads.example/${id}/0`,
+        },
+        {
+            length: fileSize - 4,
+            method: 'PUT',
+            offset: 4,
+            requestHeaders: [],
+            url: `https://uploads.example/${id}/1`,
+        },
+    ],
+});
+
+/** App Store Connect reserving a screenshot of `loc-1`, answering `attributes` — by default two upload operations, of the first 4 bytes and of the rest. */
+export default function screenshotReserved(
+    { assetType, fileName, fileSize, id }: Reservation,
+    attributes: object = inTwoChunks(id, fileSize),
+) {
     return defineStub({
         request: http.post('https://api.appstoreconnect.apple.com/v1/appEventScreenshots', {
             body: {
@@ -27,24 +49,7 @@ export default function screenshotReserved({ assetType, fileName, fileSize, id }
         response: http.json(
             {
                 data: {
-                    attributes: {
-                        uploadOperations: [
-                            {
-                                length: 4,
-                                method: 'PUT',
-                                offset: 0,
-                                requestHeaders: [{ name: 'Content-Type', value: 'image/png' }],
-                                url: `https://uploads.example/${id}/0`,
-                            },
-                            {
-                                length: fileSize - 4,
-                                method: 'PUT',
-                                offset: 4,
-                                requestHeaders: [],
-                                url: `https://uploads.example/${id}/1`,
-                            },
-                        ],
-                    },
+                    attributes,
                     id,
                     type: 'appEventScreenshots',
                 },

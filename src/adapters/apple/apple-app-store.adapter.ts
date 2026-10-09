@@ -45,7 +45,7 @@ class AppleAppStoreAdapter implements BroadcastProviderPort {
                 },
             },
         });
-        const eventId = readAnswer(AppleEventResponseSchema, raw).data.id;
+        const eventId = readAnswer(AppleCreatedSchema, raw).data.id;
 
         const localization = await callAppStoreConnect(token, '/appEventLocalizations', {
             method: 'POST',

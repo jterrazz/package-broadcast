@@ -1,18 +1,18 @@
 import { z } from 'zod';
 
-/** An in-app event, as App Store Connect answers a create, an update or a listing, every field it carries kept. */
-export const AppleEventSchema = z.looseObject({
+// invariant: loose, so the event a result keeps as its raw holds every field Apple sent.
+const AppleEventSchema = z.looseObject({
     attributes: z.looseObject({ eventState: z.string() }),
     id: z.string(),
 });
 
-/** The answer to an event created or updated. */
+/** The answer to an event updated. */
 export const AppleEventResponseSchema = z.object({ data: AppleEventSchema });
 
 /** The answer to a listing of the app's events. */
 export const AppleEventListSchema = z.object({ data: z.array(AppleEventSchema) });
 
-/** The answer to a resource created by its id alone — a localization. */
+/** The answer to a resource created — an event, a localization — read for its id alone. */
 export const AppleCreatedSchema = z.object({ data: z.object({ id: z.string() }) });
 
 const RequestHeaderSchema = z.object({ name: z.string(), value: z.string() });
@@ -21,12 +21,12 @@ const UploadOperationSchema = z.object({
     length: z.number(),
     method: z.string(),
     offset: z.number(),
-    requestHeaders: z.array(RequestHeaderSchema),
+    requestHeaders: z.array(RequestHeaderSchema).optional(),
     url: z.string(),
 });
 
 const ScreenshotAttributesSchema = z.object({
-    uploadOperations: z.array(UploadOperationSchema),
+    uploadOperations: z.array(UploadOperationSchema).optional(),
 });
 
 /** The answer to a screenshot reserved: its id and the uploads its bytes owe. */

@@ -70,6 +70,40 @@ export const withDetail = (url: string) =>
         screenshotCommitted('shot-detail'),
     );
 
+/** …where the card at `url` is reserved with one upload operation naming no header, its 9 bytes uploaded whole. */
+export const withHeaderlessUpload = (url: string) =>
+    defineStubs(
+        appStore,
+        imageDownloaded(url, 'cardbytes', 'image/png'),
+        screenshotReserved(
+            { assetType: 'EVENT_CARD', fileName: 'event-card.png', fileSize: 9, id: 'shot-card' },
+            {
+                uploadOperations: [
+                    {
+                        length: 9,
+                        method: 'PUT',
+                        offset: 0,
+                        url: 'https://uploads.example/shot-card/0',
+                    },
+                ],
+            },
+        ),
+        chunkUploaded('https://uploads.example/shot-card/0', 'cardbytes'),
+        screenshotCommitted('shot-card'),
+    );
+
+/** …where the card at `url` is reserved with no upload operation, and committed as it is. */
+export const withNothingToUpload = (url: string) =>
+    defineStubs(
+        appStore,
+        imageDownloaded(url, 'cardbytes', 'image/png'),
+        screenshotReserved(
+            { assetType: 'EVENT_CARD', fileName: 'event-card.png', fileSize: 9, id: 'shot-card' },
+            {},
+        ),
+        screenshotCommitted('shot-card'),
+    );
+
 /** …where the artwork host knows nothing at `url`. */
 export const withImageMissing = (url: string) => defineStubs(appStore, imageMissing(url));
 

@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { AppleAppStoreAdapter, AppleAppStoreError } from '../../../src/index.js';
 import type { Broadcast } from '../../../src/index.js';
 import { APP, springEvent } from '../__setup__/app-store-connect.js';
-import { refusingApp, withEventHolding } from '../__setup__/stubs/app-store.stubs.js';
+import { echoingEvent, refusingApp, withEventHolding } from '../__setup__/stubs/app-store.stubs.js';
 import { integration } from '../integration.specification.js';
 
 const CREATED = {
@@ -26,30 +26,48 @@ const create = async (attributes: object, broadcast: Broadcast) =>
 
 describe('create', () => {
     test('creates the event of the app, then its English localization', async () => {
-        // Given - an App Store Connect taking exactly the event this broadcast describes
-        const result = await create(
-            {
-                badge: 'SPECIAL_EVENT',
-                deepLink: 'signews://events/spring-2026',
-                primaryLocale: 'en-US',
-                priority: 'NORMAL',
-                purchaseRequirement: 'NO_COST_ASSOCIATED',
-                purpose: 'APPROPRIATE_FOR_ALL_USERS',
-                referenceName: 'Spring Event',
-                territorySchedules: [
-                    {
-                        eventEnd: '2026-04-15T00:00:00.000Z',
-                        eventStart: '2026-04-01T00:00:00.000Z',
-                        publishStart: '2026-04-01T00:00:00.000Z',
-                        territories: ['USA'],
-                    },
-                ],
-            },
-            springEvent({ deepLink: 'signews://events/spring-2026' }),
-        );
+        // Given - an App Store Connect taking any event, answering by its id alone and echoing what it received
+        const result = await integration
+            .intercept(echoingEvent)
+            .call(
+                async () =>
+                    await new AppleAppStoreAdapter(APP).create(
+                        springEvent({ deepLink: 'signews://events/spring-2026' }),
+                    ),
+            );
 
-        // Then - the event Apple named is the result, its localization taken after it
-        expect(result.value).toMatch(CREATED);
+        // Then - the event sent was exactly this broadcast's, and the id Apple named is the result
+        expect(result.value).toMatch({
+            id: 'event-1',
+            provider: 'apple-app-store',
+            raw: {
+                data: { id: 'event-1', type: 'appEvents' },
+                received: {
+                    data: {
+                        attributes: {
+                            badge: 'SPECIAL_EVENT',
+                            deepLink: 'signews://events/spring-2026',
+                            primaryLocale: 'en-US',
+                            priority: 'NORMAL',
+                            purchaseRequirement: 'NO_COST_ASSOCIATED',
+                            purpose: 'APPROPRIATE_FOR_ALL_USERS',
+                            referenceName: 'Spring Event',
+                            territorySchedules: [
+                                {
+                                    eventEnd: '2026-04-15T00:00:00.000Z',
+                                    eventStart: '2026-04-01T00:00:00.000Z',
+                                    publishStart: '2026-04-01T00:00:00.000Z',
+                                    territories: ['USA'],
+                                },
+                            ],
+                        },
+                        relationships: { app: { data: { id: '6444444444', type: 'apps' } } },
+                        type: 'appEvents',
+                    },
+                },
+            },
+            status: 'created',
+        });
     });
 
     test.each([

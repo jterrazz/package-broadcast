@@ -4,6 +4,7 @@ import chunkRefused from './http/chunk-refused.js';
 import chunkUploaded from './http/chunk-uploaded.js';
 import eventCreated from './http/event-created.js';
 import eventDeleted from './http/event-deleted.js';
+import eventEchoed from './http/event-echoed.js';
 import eventListedAs from './http/event-listed-as.js';
 import eventMissing from './http/event-missing.js';
 import eventRefused from './http/event-refused.js';
@@ -20,6 +21,9 @@ export const appStore = defineStubs(eventCreated(), localizationCreated);
 
 /** …where the event is taken only when its attributes hold `attributes`. */
 export const withEventHolding = (attributes: object) => appStore.with(eventCreated(attributes));
+
+/** …where any event is taken, answered by its id alone, and the body it came with is echoed back. */
+export const echoingEvent = appStore.with(eventEchoed);
 
 /** An App Store Connect refusing every event of the app `appId`. */
 export const refusingApp = (appId: string) => defineStubs(eventRefused(appId));

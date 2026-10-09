@@ -39,6 +39,8 @@ The packaging specs pack `dist/`, never `src/`: `make test` builds first, but a 
 
 No suite here reaches the live App Store Connect API: the stubs state what Apple answers, and nothing runs them against Apple. A change of Apple's API shows in production, not here.
 
+No behaviour is proven from `dist/`: the adapter's calls are specified on the source, through `src/index.ts`, because the App Store Connect origin is fixed and a spawned consumer's `fetch` cannot be intercepted; the tarball specs prove only the exports and the declarations, so a defect the bundling alone introduces inside the adapter passes every behaviour spec.
+
 ## What earns a test
 
 A behaviour a consumer relies on is specified through the public entry. A module test is kept only for a pure algorithm whose edges are cheaper at its own level, or for a failure no consumer's call can provoke honestly; none of the modules here is either, so the three module tests the package once had were promoted to the specs above, and the old lifecycle spec, which only repeated them, was deleted.

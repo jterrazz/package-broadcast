@@ -67,19 +67,19 @@ An update sends those four fields alone: a title, descriptions, dates, territori
 
 ## Field mapping
 
-| Broadcast          | Apple In-App Event                                                                                                          |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| `title`            | `referenceName` + localized `name`                                                                                          |
-| `shortDescription` | localized `shortDescription`                                                                                                |
-| `longDescription`  | localized `longDescription`                                                                                                 |
-| `badge`            | `badge` (`CHALLENGE`, `COMPETITION`, …)                                                                                     |
-| `audience`         | `purpose` (`APPROPRIATE_FOR_ALL_USERS`, `ATTRACT_NEW_USERS`, `ATTRACT_LAPSED_USERS`)                                        |
-| `priority`         | `priority` (`NORMAL`, `HIGH`)                                                                                               |
-| `requiresPurchase` | `purchaseRequirement` (`NO_COST_ASSOCIATED`, `IN_APP_PURCHASE`)                                                             |
-| `territories`      | `territorySchedules` — one schedule from `startDate` to `endDate`, published at `startDate`; `USA` alone when none is named |
-| `deepLink`         | `deepLink` — empty when none is given                                                                                       |
-| `cardImageUrl`     | uploaded as the `EVENT_CARD` asset, 16:9                                                                                    |
-| `detailImageUrl`   | uploaded as the `EVENT_DETAILS_PAGE` asset, 9:16                                                                            |
+| Broadcast          | Apple In-App Event                                                                                                                                    |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`            | `referenceName` + localized `name`                                                                                                                    |
+| `shortDescription` | localized `shortDescription`                                                                                                                          |
+| `longDescription`  | localized `longDescription`                                                                                                                           |
+| `badge`            | `badge` (`CHALLENGE`, `COMPETITION`, …)                                                                                                               |
+| `audience`         | `purpose` (`APPROPRIATE_FOR_ALL_USERS`, `ATTRACT_NEW_USERS`, `ATTRACT_LAPSED_USERS`) — `active-users` and `all` both send `APPROPRIATE_FOR_ALL_USERS` |
+| `priority`         | `priority` (`NORMAL`, `HIGH`)                                                                                                                         |
+| `requiresPurchase` | `purchaseRequirement` (`NO_COST_ASSOCIATED`, `IN_APP_PURCHASE`)                                                                                       |
+| `territories`      | `territorySchedules` — one schedule from `startDate` to `endDate`, published at `startDate`; `USA` alone when none is named                           |
+| `deepLink`         | `deepLink` — empty when none is given                                                                                                                 |
+| `cardImageUrl`     | uploaded as the `EVENT_CARD` asset, 16:9                                                                                                              |
+| `detailImageUrl`   | uploaded as the `EVENT_DETAILS_PAGE` asset, 9:16                                                                                                      |
 
 The badge, purpose and state tables are `BADGES`, `PURPOSES` and `STATUSES` in `src/adapters/apple/apple-app-store.mapping.ts`.
 

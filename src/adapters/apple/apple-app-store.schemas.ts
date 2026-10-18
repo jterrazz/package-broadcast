@@ -12,7 +12,7 @@ export const AppleEventResponseSchema = z.object({ data: AppleEventSchema });
 /** The answer to a listing of the app's events. */
 export const AppleEventListSchema = z.object({ data: z.array(AppleEventSchema) });
 
-/** The answer to a resource created — an event, a localization — read for its id alone. */
+/** The answer to a resource created (an event, a localization), read for its id alone. */
 export const AppleCreatedSchema = z.object({ data: z.object({ id: z.string() }) });
 
 const RequestHeaderSchema = z.object({ name: z.string(), value: z.string() });

@@ -19,10 +19,10 @@ import screenshotReserved from './http/screenshot-reserved.js';
 /** The world a create lives in: App Store Connect takes the event, then its localization. */
 export const appStore = defineStubs(eventCreated(), localizationCreated);
 
-/** …where the event is taken only when its attributes hold `attributes`. */
+/** The create world, where the event is taken only when its attributes hold `attributes`. */
 export const withEventHolding = (attributes: object) => appStore.with(eventCreated(attributes));
 
-/** …where any event is taken, answered by its id alone, and the body it came with is echoed back. */
+/** The create world, where any event is taken, answered by its id alone, and the body it came with is echoed back. */
 export const echoingEvent = appStore.with(eventEchoed);
 
 /** An App Store Connect refusing every event of the app `appId`. */
@@ -43,7 +43,7 @@ export const deleting = defineStubs(eventDeleted);
 /** An App Store Connect knowing no `event-9`. */
 export const knowingNoEvent = defineStubs(eventMissing);
 
-/** …where the card at `url`, served under `contentType`, is reserved as `fileName`, uploaded in two chunks and committed. */
+/** The create world, where the card at `url`, served under `contentType`, is reserved as `fileName`, uploaded in two chunks and committed. */
 export const withCard = (url: string, contentType: string, fileName: string) =>
     defineStubs(
         appStore,
@@ -56,7 +56,7 @@ export const withCard = (url: string, contentType: string, fileName: string) =>
         screenshotCommitted('shot-card'),
     );
 
-/** …where the detail image of `url`, a PNG, fills the detail page slot the same way. */
+/** The create world, where the detail image of `url`, a PNG, fills the detail page slot the same way. */
 export const withDetail = (url: string) =>
     defineStubs(
         appStore,
@@ -74,7 +74,7 @@ export const withDetail = (url: string) =>
         screenshotCommitted('shot-detail'),
     );
 
-/** …where the card at `url` is reserved with one upload operation naming no header, its 9 bytes uploaded whole. */
+/** The create world, where the card at `url` is reserved with one upload operation naming no header, its 9 bytes uploaded whole. */
 export const withHeaderlessUpload = (url: string) =>
     defineStubs(
         appStore,
@@ -96,7 +96,7 @@ export const withHeaderlessUpload = (url: string) =>
         screenshotCommitted('shot-card'),
     );
 
-/** …where the card at `url` is reserved with no upload operation, and committed as it is. */
+/** The create world, where the card at `url` is reserved with no upload operation, and committed as it is. */
 export const withNothingToUpload = (url: string) =>
     defineStubs(
         appStore,
@@ -108,10 +108,10 @@ export const withNothingToUpload = (url: string) =>
         screenshotCommitted('shot-card'),
     );
 
-/** …where the artwork host knows nothing at `url`. */
+/** The create world, where the artwork host knows nothing at `url`. */
 export const withImageMissing = (url: string) => defineStubs(appStore, imageMissing(url));
 
-/** …where the card at `url` is reserved, and the upload host refuses its first chunk. */
+/** The create world, where the card at `url` is reserved, and the upload host refuses its first chunk. */
 export const withChunkRefused = (url: string) =>
     defineStubs(
         appStore,

@@ -26,7 +26,7 @@ const inTwoChunks = (id: string, fileSize: number) => ({
     ],
 });
 
-/** App Store Connect reserving a screenshot of `loc-1`, answering `attributes` — by default two upload operations, of the first 4 bytes and of the rest. */
+/** App Store Connect reserving a screenshot of `loc-1`, answering `attributes`: by default, two upload operations, of the first 4 bytes and of the rest. */
 export default function screenshotReserved(
     { assetType, fileName, fileSize, id }: Reservation,
     attributes: object = inTwoChunks(id, fileSize),

@@ -1,9 +1,9 @@
-/** Core broadcast model — a platform-agnostic announcement that can be distributed to multiple channels. */
+/** Core broadcast model: a platform-agnostic announcement that can be distributed to multiple channels. */
 export type Broadcast = {
     /** Unique identifier (optional, assigned by providers) */
     id?: string;
 
-    /** Display title — short, punchy (max ~30 chars for App Store compat) */
+    /** Display title, short and punchy (max ~30 chars for App Store compat) */
     title: string;
 
     /** Short teaser shown on cards/previews (max ~50 chars) */
@@ -36,10 +36,10 @@ export type Broadcast = {
     /** Regional availability (ISO 3166-1 alpha-2 codes). Undefined = all regions. */
     territories?: string[];
 
-    /** URL to an image for the event card — landscape 16:9 (e.g. 1920x1080) */
+    /** URL to an image for the event card, landscape 16:9 (e.g. 1920x1080) */
     cardImageUrl?: string;
 
-    /** URL to an image for the event detail page — portrait 9:16 (e.g. 1080x1920) */
+    /** URL to an image for the event detail page, portrait 9:16 (e.g. 1080x1920) */
     detailImageUrl?: string;
 };
 

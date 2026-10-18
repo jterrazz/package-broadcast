@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 /** App Store Connect knowing no event `event-9`. */
 export default defineStub({

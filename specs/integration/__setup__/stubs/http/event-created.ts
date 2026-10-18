@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 /** App Store Connect accepting, under a signed token, an event of the app whose attributes hold `attributes`, and naming it `event-1`. */
 export default function eventCreated(attributes: object = {}) {

@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 type Reservation = {
     assetType: 'EVENT_CARD' | 'EVENT_DETAILS_PAGE';

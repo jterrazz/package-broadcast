@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 /** The artwork host knowing nothing at `url`. */
 export default function imageMissing(url: string) {

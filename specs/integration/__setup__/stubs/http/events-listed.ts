@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 /** The app's in-app events, one per state in `states`, named `event-1` onwards in that order. */
 export default function eventsListed(states: readonly string[]) {

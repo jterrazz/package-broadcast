@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 /** App Store Connect marking the screenshot `id` uploaded. */
 export default function screenshotCommitted(id: string) {

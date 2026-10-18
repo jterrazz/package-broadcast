@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 /** App Store Connect refusing an event of the app `appId` with a 422 and the reason it gives. */
 export default function eventRefused(appId: string) {

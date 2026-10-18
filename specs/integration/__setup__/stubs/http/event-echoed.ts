@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 /** App Store Connect taking, under a signed token, any event, answering with its id `event-1` alone and echoing the body it received. */
 export default defineStub({

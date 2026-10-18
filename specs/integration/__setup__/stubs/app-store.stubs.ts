@@ -1,4 +1,4 @@
-import { defineStubs } from '@jterrazz/test';
+import { defineStubs } from '@jterrazz/test/stubs';
 
 import chunkRefused from './http/chunk-refused.js';
 import chunkUploaded from './http/chunk-uploaded.js';

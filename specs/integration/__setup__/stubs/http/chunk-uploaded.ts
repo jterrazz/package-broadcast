@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 /** The upload host taking, at `url`, exactly the bytes of `chunk`, under `headers`. */
 export default function chunkUploaded(

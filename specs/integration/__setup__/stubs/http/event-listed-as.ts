@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 /** The app's in-app events: one, written as `event`. */
 export default function eventListedAs(event: object) {

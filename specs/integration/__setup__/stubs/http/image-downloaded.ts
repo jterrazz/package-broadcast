@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 /** The artwork host serving `url` as `body`, under `contentType`. */
 export default function imageDownloaded(url: string, body: string, contentType: string) {

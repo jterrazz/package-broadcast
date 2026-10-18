@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 /** App Store Connect taking a patch of `event-1`, now waiting for review, its answer echoing the body it received. */
 export default defineStub({

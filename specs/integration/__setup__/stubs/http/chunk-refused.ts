@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 /** The upload host refusing whatever reaches `url`. */
 export default function chunkRefused(url: string) {

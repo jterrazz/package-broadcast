@@ -1,4 +1,4 @@
-import { defineStub, http } from '@jterrazz/test';
+import { defineStub, http } from '@jterrazz/test/stubs';
 
 /** The English localization of `event-1`, carrying the broadcast's title and both descriptions, named `loc-1`. */
 export default defineStub({

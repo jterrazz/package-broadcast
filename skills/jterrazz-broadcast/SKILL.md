@@ -1,13 +1,13 @@
 ---
 name: jterrazz-broadcast
-description: Multi-channel announcements via @jterrazz/broadcast — App Store in-app events, and channels of your own. Use when creating, sending, or managing announcements.
+description: Multi-channel announcements via @jterrazz/broadcast: App Store in-app events, and channels of your own. Use when creating, sending, or managing announcements.
 ---
 
 # @jterrazz/broadcast
 
 Part of the @jterrazz ecosystem. Defines how apps announce and distribute events.
 
-Define an announcement once, send it to every channel — App Store In-App Events today, and any channel you implement. The manual is the package's `docs/` (`docs/README.md` maps it).
+Define an announcement once, send it to every channel: App Store In-App Events today, and any channel you implement. The manual is the package's `docs/` (`docs/README.md` maps it).
 
 ## Core model
 

@@ -4,11 +4,11 @@
 
 ## Credentials
 
-1. App Store Connect → **Users and Access** → **Integrations** → **App Store Connect API**.
+1. In App Store Connect, open **Users and Access**, then **Integrations**, then **App Store Connect API**.
 2. **Generate API Key**, access **Admin** (In-App Events require it).
-3. Download the `.p8` file — it can only be downloaded once.
+3. Download the `.p8` file. It can only be downloaded once.
 4. Note the **Key ID** shown beside it, and the **Issuer ID** shown at the top of the page.
-5. The **App ID** is under **Apps** → the app → **App Information** → **Apple ID**.
+5. The **App ID** is under **Apps**, in the app's **App Information**, as its **Apple ID**.
 
 ```ts
 import { readFileSync } from 'node:fs';
@@ -45,7 +45,7 @@ await apple.delete('event-id');
 
 ## What each call sends
 
-Every call carries a fresh 20-minute ES256 token signed with the API key (`createAppleJwt`, exported for a consumer who calls App Store Connect itself), and a refused call — any status that is not 2xx — rejects with an `AppleAppStoreError` whose `statusCode` and `responseBody` are Apple's answer verbatim. A 2xx answer is read only for what the call uses — a created resource's id, a listed or updated event's id and `eventState`, a reserved screenshot's id and its upload operations, which may be absent, as may each operation's headers. An answer lacking what is read rejects with a plain `Error`, not an `AppleAppStoreError`, its message starting `App Store Connect answered an unexpected shape:` and naming the path of what is missing; on `create` it can follow side effects, the event already existing in App Store Connect.
+Every call carries a fresh 20-minute ES256 token signed with the API key (`createAppleJwt`, exported for a consumer who calls App Store Connect itself), and a refused call (any status that is not 2xx) rejects with an `AppleAppStoreError` whose `statusCode` and `responseBody` are Apple's answer verbatim. A 2xx answer is read only for what the call uses: a created resource's id, a listed or updated event's id and `eventState`, a reserved screenshot's id and its upload operations, which may be absent, as may each operation's headers. An answer lacking what is read rejects with a plain `Error`, not an `AppleAppStoreError`, its message starting `App Store Connect answered an unexpected shape:` and naming the path of what is missing; on `create` it can follow side effects, the event already existing in App Store Connect.
 
 | Call                | Requests, in order                                                                                                                                                                                                     | Answers                                                                      |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
@@ -54,7 +54,7 @@ Every call carries a fresh 20-minute ES256 token signed with the API key (`creat
 | `update(id, patch)` | `PATCH /appEvents/{id}` with only the attributes the patch gives: `deepLink`, `priority`, `requiresPurchase`, `audience`                                                                                               | the event's new state as a status, Apple's answer as `raw`                   |
 | `delete(id)`        | `DELETE /appEvents/{id}`                                                                                                                                                                                               | nothing                                                                      |
 
-An update sends those four fields alone: a title, descriptions, dates, territories or images passed to it are not sent. The create does not undo what it already did: an image that cannot be downloaded or uploaded rejects the create after the event and its localization exist in App Store Connect. An image is reserved as `event-card.jpg` when its host serves it under a JPEG content type, `event-card.png` otherwise — the detail image under the same name. An empty image URL uploads nothing.
+An update sends those four fields alone: a title, descriptions, dates, territories or images passed to it are not sent. The create does not undo what it already did: an image that cannot be downloaded or uploaded rejects the create after the event and its localization exist in App Store Connect. An image is reserved as `event-card.jpg` when its host serves it under a JPEG content type, `event-card.png` otherwise; the detail image follows the same rule. An empty image URL uploads nothing.
 
 | Apple event state      | Status      |
 | ---------------------- | ----------- |
@@ -67,19 +67,19 @@ An update sends those four fields alone: a title, descriptions, dates, territori
 
 ## Field mapping
 
-| Broadcast          | Apple In-App Event                                                                                                                                    |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`            | `referenceName` + localized `name`                                                                                                                    |
-| `shortDescription` | localized `shortDescription`                                                                                                                          |
-| `longDescription`  | localized `longDescription`                                                                                                                           |
-| `badge`            | `badge` (`CHALLENGE`, `COMPETITION`, …)                                                                                                               |
-| `audience`         | `purpose` (`APPROPRIATE_FOR_ALL_USERS`, `ATTRACT_NEW_USERS`, `ATTRACT_LAPSED_USERS`) — `active-users` and `all` both send `APPROPRIATE_FOR_ALL_USERS` |
-| `priority`         | `priority` (`NORMAL`, `HIGH`)                                                                                                                         |
-| `requiresPurchase` | `purchaseRequirement` (`NO_COST_ASSOCIATED`, `IN_APP_PURCHASE`)                                                                                       |
-| `territories`      | `territorySchedules` — one schedule from `startDate` to `endDate`, published at `startDate`; `USA` alone when none is named                           |
-| `deepLink`         | `deepLink` — empty when none is given                                                                                                                 |
-| `cardImageUrl`     | uploaded as the `EVENT_CARD` asset, 16:9                                                                                                              |
-| `detailImageUrl`   | uploaded as the `EVENT_DETAILS_PAGE` asset, 9:16                                                                                                      |
+| Broadcast          | Apple In-App Event                                                                                                                                   |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`            | `referenceName` + localized `name`                                                                                                                   |
+| `shortDescription` | localized `shortDescription`                                                                                                                         |
+| `longDescription`  | localized `longDescription`                                                                                                                          |
+| `badge`            | `badge` (`CHALLENGE`, `COMPETITION` and the rest)                                                                                                    |
+| `audience`         | `purpose` (`APPROPRIATE_FOR_ALL_USERS`, `ATTRACT_NEW_USERS`, `ATTRACT_LAPSED_USERS`); `active-users` and `all` both send `APPROPRIATE_FOR_ALL_USERS` |
+| `priority`         | `priority` (`NORMAL`, `HIGH`)                                                                                                                        |
+| `requiresPurchase` | `purchaseRequirement` (`NO_COST_ASSOCIATED`, `IN_APP_PURCHASE`)                                                                                      |
+| `territories`      | `territorySchedules`: one schedule from `startDate` to `endDate`, published at `startDate`; `USA` alone when none is named                           |
+| `deepLink`         | `deepLink`, empty when none is given                                                                                                                 |
+| `cardImageUrl`     | uploaded as the `EVENT_CARD` asset, 16:9                                                                                                             |
+| `detailImageUrl`   | uploaded as the `EVENT_DETAILS_PAGE` asset, 9:16                                                                                                     |
 
 The badge, purpose and state tables are `BADGES`, `PURPOSES` and `STATUSES` in `src/adapters/apple/apple-app-store.mapping.ts`.
 

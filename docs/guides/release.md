@@ -1,10 +1,10 @@
 # Release
 
-This repository ships one thing: the npm package `@jterrazz/broadcast`, published to the public registry (`publishConfig.registry` in `package.json`). There is no service, no image and no infrastructure of its own — releasing it is the whole of shipping it, and this guide is how it is cut and who cuts it.
+This repository ships one thing: the npm package `@jterrazz/broadcast`, published to the public registry (`publishConfig.registry` in `package.json`). There is no service, no image and no infrastructure of its own: releasing it is the whole of shipping it, and this guide is how it is cut and who cuts it.
 
 ## What a merge to `main` does
 
-Nothing that reaches a consumer. `.github/workflows/validate.yaml` runs on every push and pull request to `main` and calls the shared `jterrazz-actions` validation workflow — build, lint, test, mutation. A green `main` is a publishable tree, not a published one.
+Nothing that reaches a consumer. `.github/workflows/validate.yaml` runs on every push and pull request to `main` and calls the shared `jterrazz-actions` validation workflow (build, lint, test, mutation). A green `main` is a publishable tree, not a published one.
 
 ## What publishes
 
@@ -23,4 +23,4 @@ A consumer installs `@jterrazz/broadcast` as a runtime dependency and imports fr
 
 ## Related
 
-- [Test](test.md) — what the validation runs before a release is possible.
+- [Test](test.md): what the validation runs before a release is possible.

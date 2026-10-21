@@ -1,6 +1,6 @@
 ---
 name: jterrazz-broadcast
-description: "Multi-channel announcements via @jterrazz/broadcast: App Store in-app events, and channels of your own. Use when creating, sending, or managing announcements."
+description: 'Multi-channel announcements via @jterrazz/broadcast: App Store in-app events, and channels of your own. Use when creating, sending, or managing announcements.'
 ---
 
 # @jterrazz/broadcast

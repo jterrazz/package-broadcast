@@ -3,7 +3,7 @@
 What proves a change here is a specification of what a consumer meets: the package's public entry called against a declared App Store Connect, and the tarball `npm pack` writes installed in a consumer's project. There is no module test today.
 
 ```bash
-make test       # builds, then runs every spec
+make test       # builds, then typescript test: the specs the change reaches, none on a proven tree
 make mutation   # the zero-survivor verdict over the change
 ```
 

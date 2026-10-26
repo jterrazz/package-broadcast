@@ -4,7 +4,7 @@ This repository ships one thing: the npm package `@jterrazz/broadcast`, publishe
 
 ## What a merge to `main` does
 
-Nothing that reaches a consumer. `.github/workflows/validate.yaml` runs on every push and pull request to `main` and calls the shared `jterrazz-actions` validation workflow (build, lint, test, mutation). A green `main` is a publishable tree, not a published one.
+Nothing that reaches a consumer. `.github/workflows/validate.yaml` runs on every push and pull request to `main` and calls the shared `studio-actions` validation workflow (build, lint, test, mutation). A green `main` is a publishable tree, not a published one.
 
 ## What publishes
 

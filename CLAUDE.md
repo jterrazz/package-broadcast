@@ -17,7 +17,7 @@ The corpus is `docs/` + `README.md`, mapped by `docs/README.md`. Decisions this 
 
 The manual is cut by its reader's need (`guides/`, `concepts/`, `reference/`), the shape every repository of the ecosystem keeps, and `typescript check` refuses a tree that breaks it (the Docs (layout) pass).
 
-One Claude Code skill routes into this corpus: `skills/jterrazz-broadcast/`. It does not restate the corpus; it routes into it.
+One Claude Code skill routes into this corpus: `skills/studio-broadcast/`. It does not restate the corpus; it routes into it.
 
 ## Setup and commands
 
@@ -25,6 +25,6 @@ The gestures (`make install`, which is `npm ci` and never a plain `npm install`,
 
 ## Standing rule
 
-A new or changed export reaches `README.md`, the relevant `docs/` page and the `skills/jterrazz-broadcast/` skill in the same change. None of the three is generated, so nothing else catches a stale one ([Develop § What a change owes](docs/guides/develop.md#what-a-change-owes)).
+A new or changed export reaches `README.md`, the relevant `docs/` page and the `skills/studio-broadcast/` skill in the same change. None of the three is generated, so nothing else catches a stale one ([Develop § What a change owes](docs/guides/develop.md#what-a-change-owes)).
 
 `CLAUDE.md` at the root is a symlink to this file: one brief, two names, no second copy.

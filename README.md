@@ -47,7 +47,7 @@ The manual lives in [`docs/`](docs/README.md), cut by what the reader came to do
 - [Write a channel](docs/guides/write-a-channel.md): a channel of your own, or one this package ships.
 - [Develop](docs/guides/develop.md), [Test](docs/guides/test.md), [Release](docs/guides/release.md): changing, proving and publishing the package.
 
-For agents: the [`skills/jterrazz-broadcast`](skills/jterrazz-broadcast/SKILL.md) Claude Code skill routes into the manual.
+For agents: the [`skills/studio-broadcast`](skills/studio-broadcast/SKILL.md) Claude Code skill routes into the manual.
 
 ## Development
 

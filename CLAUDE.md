@@ -26,5 +26,3 @@ The gestures (`make install`, which is `npm ci` and never a plain `npm install`,
 ## Standing rule
 
 A new or changed export reaches `README.md`, the relevant `docs/` page and the `skills/studio-broadcast/` skill in the same change. None of the three is generated, so nothing else catches a stale one ([Develop § What a change owes](docs/guides/develop.md#what-a-change-owes)).
-
-`CLAUDE.md` at the root is a symlink to this file: one brief, two names, no second copy.
